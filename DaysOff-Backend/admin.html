@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Days OFF 运营后台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", -apple-system, sans-serif;
+    background: rgb(250, 246, 236);
+    color: rgb(60, 55, 50);
+    min-height: 100vh;
+  }
+  header {
+    padding: 28px 32px 20px;
+    display: flex; align-items: baseline; gap: 16px;
+  }
+  header h1 { font-size: 22px; font-weight: 600; }
+  header .date { font-size: 13px; color: rgb(140, 130, 120); }
+  header .refresh {
+    margin-left: auto; font-size: 13px; padding: 8px 16px;
+    border: 1px solid rgb(140, 155, 175); border-radius: 8px;
+    background: none; color: rgb(90, 105, 130); cursor: pointer;
+  }
+  main { padding: 0 32px 40px; max-width: 1080px; margin: 0 auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .card {
+    background: rgb(252, 252, 249); border-radius: 14px; padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(120, 100, 80, 0.08);
+  }
+  .card .label { font-size: 13px; color: rgb(140, 130, 120); margin-bottom: 8px; }
+  .card .value { font-size: 30px; font-weight: 700; }
+  .card .value.red { color: rgb(180, 70, 60); }
+  .card .value.orange { color: rgb(200, 130, 50); }
+  .card .value.blue { color: rgb(90, 120, 160); }
+  .panel {
+    background: rgb(252, 252, 249); border-radius: 14px; padding: 22px 24px;
+    box-shadow: 0 2px 8px rgba(120, 100, 80, 0.08); margin-bottom: 20px;
+  }
+  .panel h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .panel .hint { font-size: 12px; color: rgb(160, 150, 140); font-weight: 400; margin-left: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: rgb(140, 130, 120); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid rgb(230, 222, 208); }
+  td { padding: 8px 10px; border-bottom: 1px solid rgb(240, 234, 222); }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; }
+  .badge.exit { background: rgba(180, 70, 60, 0.12); color: rgb(180, 70, 60); }
+  .badge.net { background: rgba(200, 130, 50, 0.12); color: rgb(200, 130, 50); }
+  .bar-track { background: rgb(240, 234, 222); border-radius: 4px; height: 8px; width: 120px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .bar-fill { height: 100%; border-radius: 4px; background: rgb(140, 155, 175); }
+  .bar-fill.red { background: rgb(180, 70, 60); }
+  .bar-fill.orange { background: rgb(200, 130, 50); }
+  #chart { width: 100%; }
+  .empty { color: rgb(160, 150, 140); font-size: 13px; padding: 20px 0; text-align: center; }
+  /* 口令输入 */
+  #gate { display: flex; flex-direction: column; align-items: center; padding-top: 18vh; gap: 14px; }
+  #gate p { font-size: 14px; color: rgb(140, 130, 120); }
+  #gate input {
+    font-size: 15px; padding: 10px 16px; width: 260px; text-align: center;
+    border: 1px solid rgb(210, 200, 185); border-radius: 10px; background: rgb(252, 252, 249);
+    outline: none;
+  }
+  #gate button {
+    font-size: 14px; padding: 10px 28px; border: none; border-radius: 10px;
+    background: rgb(140, 155, 175); color: white; cursor: pointer;
+  }
+  #gate .err { color: rgb(180, 70, 60); font-size: 13px; }
+  #dash { display: none; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <p>请输入管理口令</p>
+  <input id="keyInput" type="password" placeholder="管理口令" autocomplete="off">
+  <button onclick="submitKey()">进入</button>
+  <div class="err" id="gateErr"></div>
+</div>
+
+<div id="dash">
+  <header>
+    <h1>Days OFF 运营后台</h1>
+    <span class="date" id="today"></span>
+    <button class="refresh" onclick="load()">刷新数据</button>
+  </header>
+  <main>
+    <div class="cards">
+      <div class="card"><div class="label">注册总数</div><div class="value blue" id="totalUsers">-</div></div>
+      <div class="card"><div class="label">今日活跃</div><div class="value" id="todayActive">-</div></div>
+      <div class="card"><div class="label">异常退出（累计）</div><div class="value red" id="exitCount">-</div></div>
+      <div class="card"><div class="label">网络错误（累计）</div><div class="value orange" id="netCount">-</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>近 30 天日活跃<span class="hint">柱子越高活跃越多，最后一根是今天</span></h2>
+      <div id="chart"></div>
+    </div>
+
+    <div class="panel">
+      <h2>事件按界面分布<span class="hint">定位问题最多的页面</span></h2>
+      <div id="byScreenWrap"><div class="empty">暂无数据</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>最近事件明细<span class="hint">最近 50 条</span></h2>
+      <div id="recentWrap"><div class="empty">暂无数据</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>用户留言<span class="hint">反馈意见</span></h2>
+      <div id="feedbackWrap"><div class="empty">暂无数据</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SCREEN_NAMES = {
+  home: '首页', mypage: '我的', mood: '心情选择', happy: '心情信封',
+  travel: '旅行', sports: '运动', gallery: '画展', picture: '上传作品',
+  crystal: '净化水晶', unknown: '未知'
+};
+const TYPE_NAMES = { abnormal_exit: '异常退出', network_error: '网络错误' };
+
+let key = localStorage.getItem('admin_key') || '';
+if (key) { boot(); } else { document.getElementById('gate').style.display = 'flex'; }
+document.getElementById('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitKey(); });
+
+function submitKey() {
+  key = document.getElementById('keyInput').value.trim();
+  if (!key) return;
+  boot(true);
+}
+
+async function boot(fromGate) {
+  try {
+    await load();
+    localStorage.setItem('admin_key', key);
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    document.getElementById('today').textContent = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  } catch (e) {
+    localStorage.removeItem('admin_key');
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('dash').style.display = 'none';
+    document.getElementById('gateErr').textContent = fromGate ? '口令错误或网络异常' : '登录已失效，请重新输入口令';
+  }
+}
+
+async function load() {
+  const [summary, events, feedback] = await Promise.all([
+    fetch('/stats/summary?key=' + encodeURIComponent(key)).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    fetch('/stats/events?key=' + encodeURIComponent(key)).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    fetch('/feedback?key=' + encodeURIComponent(key)).then(r => r.ok ? r.json() : []).catch(() => [])
+  ]);
+  renderCards(summary, events);
+  renderChart(summary.daily || []);
+  renderByScreen(events.byScreen || []);
+  renderRecent(events.recent || []);
+  renderFeedback(feedback);
+}
+
+function renderCards(summary, events) {
+  document.getElementById('totalUsers').textContent = summary.totalUsers ?? 0;
+  document.getElementById('todayActive').textContent = summary.todayActive ?? 0;
+  const counts = {};
+  (events.byType || []).forEach(r => counts[r.type] = r.count);
+  document.getElementById('exitCount').textContent = counts.abnormal_exit ?? 0;
+  document.getElementById('netCount').textContent = counts.network_error ?? 0;
+}
+
+function renderChart(daily) {
+  const el = document.getElementById('chart');
+  if (!daily.length) { el.innerHTML = '<div class="empty">暂无数据</div>'; return; }
+  const max = Math.max(...daily.map(d => d.count), 1);
+  const n = daily.length;
+  const bw = Math.min(22, Math.floor(900 / n) - 4);
+  const gap = 4, H = 140, top = 14;
+  const W = n * (bw + gap) + 10;
+  let bars = '', labels = '', nums = '';
+  daily.forEach((d, i) => {
+    const x = 5 + i * (bw + gap);
+    const h = Math.max(2, Math.round(d.count / max * (H - top)));
+    const isToday = i === n - 1;
+    bars += `<rect x="${x}" y="${H - h}" width="${bw}" height="${h}" rx="3" fill="${isToday ? 'rgb(140,155,175)' : 'rgb(190,200,214)'}"/>`;
+    nums += `<text x="${x + bw / 2}" y="${H - h - 4}" font-size="9" text-anchor="middle" fill="rgb(140,130,120)">${d.count || ''}</text>`;
+    if (i % Math.ceil(n / 6) === 0 || isToday) {
+      labels += `<text x="${x + bw / 2}" y="${H + 14}" font-size="9" text-anchor="middle" fill="rgb(160,150,140)">${d.day.slice(5)}</text>`;
+    }
+  });
+  el.innerHTML = `<svg id="chart" viewBox="0 0 ${W} ${H + 20}" style="max-width:100%">${bars}${nums}${labels}</svg>`;
+}
+
+function renderByScreen(rows) {
+  const wrap = document.getElementById('byScreenWrap');
+  if (!rows.length) { wrap.innerHTML = '<div class="empty">暂无数据</div>'; return; }
+  const byScreen = {};
+  rows.forEach(r => {
+    byScreen[r.screen] = byScreen[r.screen] || { abnormal_exit: 0, network_error: 0 };
+    byScreen[r.screen][r.type] = r.count;
+  });
+  const list = Object.entries(byScreen).sort((a, b) => (b[1].abnormal_exit + b[1].network_error) - (a[1].abnormal_exit + a[1].network_error));
+  const max = Math.max(...list.map(([, v]) => v.abnormal_exit + v.network_error), 1);
+  let html = '<table><tr><th>界面</th><th>异常退出</th><th>网络错误</th><th>占比</th></tr>';
+  list.forEach(([screen, v]) => {
+    const name = SCREEN_NAMES[screen] || screen;
+    const pct = Math.round((v.abnormal_exit + v.network_error) / max * 100);
+    html += `<tr><td>${name}</td><td>${v.abnormal_exit || '-'}</td><td>${v.network_error || '-'}</td>
+      <td><span class="bar-track"><span class="bar-fill ${v.abnormal_exit ? 'red' : 'orange'}" style="width:${pct}%"></span></span></td></tr>`;
+  });
+  wrap.innerHTML = html + '</table>';
+}
+
+function renderRecent(rows) {
+  const wrap = document.getElementById('recentWrap');
+  if (!rows.length) { wrap.innerHTML = '<div class="empty">暂无数据</div>'; return; }
+  let html = '<table><tr><th>时间</th><th>类型</th><th>界面</th><th>详情</th></tr>';
+  rows.forEach(r => {
+    const t = (r.ts || '').slice(5, 16).replace('T', ' ');
+    const badge = r.type === 'abnormal_exit'
+      ? '<span class="badge exit">异常退出</span>'
+      : '<span class="badge net">网络错误</span>';
+    html += `<tr><td>${t}</td><td>${badge}</td><td>${SCREEN_NAMES[r.screen] || r.screen || '-'}</td><td>${escapeHtml(r.detail) || '-'}</td></tr>`;
+  });
+  wrap.innerHTML = html + '</table>';
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderFeedback(rows) {
+  const wrap = document.getElementById('feedbackWrap');
+  if (!rows || !rows.length) { wrap.innerHTML = '<div class="empty">暂无留言</div>'; return; }
+  let html = '<table><tr><th>时间</th><th>用户名</th><th>邮箱</th><th>留言内容</th></tr>';
+  rows.forEach(r => {
+    const t = (r.timestamp || '').slice(0, 16).replace('T', ' ');
+    html += `<tr><td>${t}</td><td>${escapeHtml(r.username)}</td><td>${escapeHtml(r.email)}</td><td style="white-space:pre-wrap;word-break:break-all">${escapeHtml(r.message)}</td></tr>`;
+  });
+  wrap.innerHTML = html + '</table>';
+}
+</script>
+</body>
+</html>
