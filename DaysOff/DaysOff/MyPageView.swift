@@ -50,7 +50,7 @@ private struct PinableCard<Content: View>: View {
     let bottomBound: CGFloat          // 相对中心偏移：Y 下限（≈ +H/2-76，正值）
     var userId: String = ""
     var cardId: String? = nil
-    var topCardId: String? = nil
+    var cardZIndex: Int = 0  // 由父视图基于 topCardStack 计算并传入；越大越靠上
     var onBringToTop: (() -> Void)? = nil
     var defaultOffset: CGSize = .zero // position 默认值：相对屏幕中心的偏移量
     var onCardTap: (() -> Void)? = nil
@@ -69,7 +69,6 @@ private struct PinableCard<Content: View>: View {
     private var keyPrefix: String { userId.isEmpty ? "" : "\(userId)_" }
     private var posKey: String { "card_pos_\(keyPrefix)\(cardId ?? "")_v3" }
     private var rotKey: String { "card_rot_\(keyPrefix)\(cardId ?? "")" }
-    private var isOnTop: Bool { topCardId != nil && topCardId == cardId }
 
     private let thumbtackSize: CGFloat = 14
 
@@ -127,7 +126,7 @@ private struct PinableCard<Content: View>: View {
                 rotation = UserDefaults.standard.double(forKey: rotKey)
             }
         }
-        .zIndex(isOnTop ? 1 : 0)
+        .zIndex(Double(cardZIndex))
     }
 
     private var thumbtackCircle: some View {
@@ -224,7 +223,21 @@ struct MyPageView: View {
     @State private var selectedExhibition: ExhibitionRecord?
     @State private var selectedMilestone: MilestoneRecord?
     @State private var showSettings = false
-    @State private var topCardId: String? = nil  // 当前置顶卡片 id（点/拖哪张哪张到最上层）
+    @State private var topCardStack: [String] = []  // 置顶历史栈：末尾为最新置顶卡片，越靠后 zIndex 越大
+
+    // 由 topCardStack 计算单张卡片的 zIndex（不在栈中 = 0）
+    private func cardZIndex(_ id: String) -> Int {
+        (topCardStack.lastIndex(of: id) ?? -1) + 1
+    }
+    // 由 topCardStack 计算某列 VStack 的 zIndex（取该列卡片在栈中的最大位置）
+    private func columnZIndex(prefix: String) -> Int {
+        (topCardStack.lastIndex(where: { $0.hasPrefix(prefix) }) ?? -1) + 1
+    }
+    // 把 cardId 推到栈顶（去重后追加）
+    private func bringToTop(_ id: String) {
+        topCardStack.removeAll { $0 == id }
+        topCardStack.append(id)
+    }
     @State private var decorativeLineY: CGFloat = 0   // 装饰线 midY（"myPage" 空间）= 卡片可上移上界
     @State private var contentBottomY: CGFloat = 0    // ScrollView 内容区底缘（"myPage" 空间）= tab bar 上缘 = 卡片可下移下界
     @State private var showAbout = false
@@ -302,14 +315,14 @@ struct MyPageView: View {
                     topBound: relTop, bottomBound: relBottom,
                     userId: userId,
                     cardId: "diary_\(diary.id.uuidString)",
-                    topCardId: topCardId,
-                    onBringToTop: { topCardId = "diary_\(diary.id.uuidString)" },
+                    cardZIndex: cardZIndex("diary_\(diary.id.uuidString)"),
+                    onBringToTop: { bringToTop("diary_\(diary.id.uuidString)") },
                     defaultOffset: CGSize(width: relX0, height: relCenter + CGFloat(idx) * 80),
                     onCardTap: {
                         withAnimation(.easeInOut(duration: 0.4)) { selectedDiary = diary }
                     }
                 ) { moodEnvelopeContent(diary: diary) }
-                .zIndex(topCardId?.hasPrefix("diary_") == true ? 1 : 0)
+                .zIndex(Double(columnZIndex(prefix: "diary_")))
             }
 
             // 第 2 列：旅行卡片
@@ -318,8 +331,8 @@ struct MyPageView: View {
                     thumbtackColor: .clear, useIcecreamGradient: true, allowTransform: false,
                     leftBound: relLeftBound, rightBound: relRightBound,
                     topBound: relTop, bottomBound: relBottom,
-                    userId: userId, cardId: "trip_\(trip.id)", topCardId: topCardId,
-                    onBringToTop: { topCardId = "trip_\(trip.id)" },
+                    userId: userId, cardId: "trip_\(trip.id)", cardZIndex: cardZIndex("trip_\(trip.id)"),
+                    onBringToTop: { bringToTop("trip_\(trip.id)") },
                     defaultOffset: CGSize(width: relX1, height: relCenter + CGFloat(idx) * 150),
                     onCardTap: {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -327,7 +340,7 @@ struct MyPageView: View {
                         }
                     }
                 ) { tripCardContent(trip: trip) }
-                .zIndex(topCardId?.hasPrefix("trip_") == true ? 1 : 0)
+                .zIndex(Double(columnZIndex(prefix: "trip_")))
             }
 
             // 第 3 列：画展卡片
@@ -337,14 +350,14 @@ struct MyPageView: View {
                     useIcecreamGradient: false, allowTransform: false,
                     leftBound: relLeftBound, rightBound: relRightBound,
                     topBound: relTop, bottomBound: relBottom,
-                    userId: userId, cardId: "exh_\(exhibition.name)", topCardId: topCardId,
-                    onBringToTop: { topCardId = "exh_\(exhibition.name)" },
+                    userId: userId, cardId: "exh_\(exhibition.name)", cardZIndex: cardZIndex("exh_\(exhibition.name)"),
+                    onBringToTop: { bringToTop("exh_\(exhibition.name)") },
                     defaultOffset: CGSize(width: relX2, height: relCenter + CGFloat(idx) * 200),
                     onCardTap: {
                         withAnimation(.easeInOut(duration: 0.4)) { selectedExhibition = exhibition }
                     }
                 ) { exhibitionCardContent(exhibition: exhibition) }
-                .zIndex(topCardId?.hasPrefix("exh_") == true ? 1 : 0)
+                .zIndex(Double(columnZIndex(prefix: "exh_")))
             }
 
             // 第 4 列：赛事卡片
@@ -354,14 +367,14 @@ struct MyPageView: View {
                     useIcecreamGradient: false, allowTransform: false,
                     leftBound: relLeftBound, rightBound: relRightBound,
                     topBound: relTop, bottomBound: relBottom,
-                    userId: userId, cardId: "event_\(event.id)", topCardId: topCardId,
-                    onBringToTop: { topCardId = "event_\(event.id)" },
+                    userId: userId, cardId: "event_\(event.id)", cardZIndex: cardZIndex("event_\(event.id)"),
+                    onBringToTop: { bringToTop("event_\(event.id)") },
                     defaultOffset: CGSize(width: relX3, height: relCenter + CGFloat(idx) * 120),
                     onCardTap: {
                         withAnimation(.easeInOut(duration: 0.4)) { selectedEvent = event }
                     }
                 ) { eventCardContent(event: event) }
-                .zIndex(topCardId?.hasPrefix("event_") == true ? 1 : 0)
+                .zIndex(Double(columnZIndex(prefix: "event_")))
             }
 
             // 第 5 列：里程碑卡片
@@ -371,14 +384,14 @@ struct MyPageView: View {
                     thumbtackColor: sandDollar, useIcecreamGradient: false, allowTransform: false,
                     leftBound: relLeftBound, rightBound: relRightBound,
                     topBound: relTop, bottomBound: relBottom,
-                    userId: userId, cardId: "milestone_\(ms.id)", topCardId: topCardId,
-                    onBringToTop: { topCardId = "milestone_\(ms.id)" },
+                    userId: userId, cardId: "milestone_\(ms.id)", cardZIndex: cardZIndex("milestone_\(ms.id)"),
+                    onBringToTop: { bringToTop("milestone_\(ms.id)") },
                     defaultOffset: CGSize(width: relX4, height: relCenter + CGFloat(idx) * 100),
                     onCardTap: {
                         withAnimation(.easeInOut(duration: 0.4)) { selectedMilestone = ms }
                     }
                 ) { milestoneCardContent(milestone: ms) }
-                .zIndex(topCardId?.hasPrefix("milestone_") == true ? 1 : 0)
+                .zIndex(Double(columnZIndex(prefix: "milestone_")))
             }
 
             // 标题：.position 强制屏中心(x=pageGeo.w/2)，绕开 VStack 对齐偏移
@@ -421,6 +434,7 @@ struct MyPageView: View {
             if let diary = selectedDiary {
                 Color.black.opacity(0.15)
                     .ignoresSafeArea()
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.4)) {
                             selectedDiary = nil
@@ -429,6 +443,7 @@ struct MyPageView: View {
 
                 moodDiaryView(diary: diary)
                     .transition(.opacity.combined(with: .scale))
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.4)) {
                             selectedDiary = nil
@@ -439,6 +454,7 @@ struct MyPageView: View {
             if let event = selectedEvent {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedEvent = nil
@@ -447,6 +463,7 @@ struct MyPageView: View {
 
                 eventPopupView(event: event)
                     .transition(.opacity.combined(with: .scale))
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedEvent = nil
@@ -457,6 +474,7 @@ struct MyPageView: View {
             if let exhibition = selectedExhibition {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedExhibition = nil
@@ -465,6 +483,7 @@ struct MyPageView: View {
 
                 exhibitionPopupView(exhibition: exhibition)
                     .transition(.opacity.combined(with: .scale))
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedExhibition = nil
@@ -475,6 +494,7 @@ struct MyPageView: View {
             if let ms = selectedMilestone {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedMilestone = nil
@@ -483,16 +503,16 @@ struct MyPageView: View {
 
                 milestonePopupView(ms)
                     .transition(.opacity.combined(with: .scale))
+                    .zIndex(1000)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             selectedMilestone = nil
                         }
                     }
             }
-        }
-        .overlay {
-            // 旅行弹窗展开时，居中显示纸张 + 点击任意位置关闭
-            if expandedTripId != nil {
+
+            // 旅行弹窗：用 ZStack 包裹遮罩+内容作为整体，zIndex(1000) 确保盖过所有卡片
+            if expandedTripId != nil, let trip = trips.first(where: { $0.id == expandedTripId }) {
                 ZStack {
                     Color.black.opacity(0.2)
                         .ignoresSafeArea()
@@ -501,11 +521,16 @@ struct MyPageView: View {
                                 expandedTripId = nil
                             }
                         }
-                    if let trip = trips.first(where: { $0.id == expandedTripId }) {
-                        tripPopupView(trip: trip)
-                    }
+
+                    tripPopupView(trip: trip)
+                        .transition(.opacity)
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                expandedTripId = nil
+                            }
+                        }
                 }
-                .transition(.opacity)
+                .zIndex(1000)
             }
         }
         .coordinateSpace(name: "myPage")
