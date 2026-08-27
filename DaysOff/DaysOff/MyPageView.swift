@@ -1450,13 +1450,13 @@ struct MyPageView: View {
             GeometryReader { geo in
                 ScrollView {
                     VStack(spacing: 0) {
-                        // 上半屏：信息卡片贴底，使 24pt 空行落在屏幕垂直中心
+                        // 上半屏：三行信息卡片向上移（留出更多空间给下方留言区）
                         VStack(spacing: 0) {
-                            Spacer(minLength: 0)
+                            Color.clear.frame(height: geo.size.height * 0.18)
                             VStack(spacing: 0) {
                                 aboutRow(label: "本应用名称", value: "Days OFF")
                                 Divider().padding(.leading, 20)
-                                aboutRow(label: "版本号", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.3")
+                                aboutRow(label: "版本号", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4")
                                 Divider().padding(.leading, 20)
                                 aboutRow(label: "发布时间", value: "2026年8月")
                             }
@@ -1465,8 +1465,9 @@ struct MyPageView: View {
                                     .fill(Color(red: 0.98, green: 0.97, blue: 0.95))
                             )
                             .padding(.horizontal, 20)
+                            Spacer(minLength: 0)
                         }
-                        .frame(width: geo.size.width, height: max(geo.size.height / 2 - 12, 0), alignment: .bottom)
+                        .frame(width: geo.size.width, height: max(geo.size.height / 2 - 12, 0), alignment: .top)
 
                         // 中间空行（位于屏幕中间）
                         Color.clear.frame(height: 24)
@@ -1475,6 +1476,19 @@ struct MyPageView: View {
                         VStack(spacing: 0) {
                             feedbackFormCard
                             Spacer(minLength: 0)
+
+                            // 底部备案与版权信息
+                            VStack(spacing: 6) {
+                                Text("ICP备案信息：苏ICP备2026061232号-2A")
+                                    .font(.pingFang(size: 11))
+                                    .foregroundColor(Color(red: 0.55, green: 0.52, blue: 0.48))
+                                Text("Copyright © 2026 Days OFF. All Rights Reserved.")
+                                    .font(.pingFang(size: 11))
+                                    .foregroundColor(Color(red: 0.55, green: 0.52, blue: 0.48))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 16)
+                            .padding(.bottom, 20)
                         }
                         .frame(width: geo.size.width, height: max(geo.size.height / 2 - 12, 0), alignment: .top)
                     }
@@ -1511,7 +1525,7 @@ struct MyPageView: View {
             Text("给我们留言")
                 .font(.pingFang(size: 17, weight: .semibold))
                 .foregroundColor(Color(red: 0.30, green: 0.28, blue: 0.32))
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
                 .padding(.bottom, 12)
