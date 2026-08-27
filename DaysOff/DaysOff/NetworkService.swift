@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// Network service wrapper using URLSession to communicate with the local backend.
 final class NetworkService {
@@ -18,6 +19,32 @@ final class NetworkService {
         config.timeoutIntervalForResource = 30
         session = URLSession(configuration: config)
     }
+
+    /// 服务器返回的 ISO8601 时间戳含毫秒小数（如 2026-08-19T15:40:34.634Z），
+    /// 而 .iso8601 策略默认不支持小数秒 → 解码失败。此处自定义策略兼容两种格式。
+    private static let iso8601WithFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static let iso8601Standard: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    static let sharedDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let str = try container.decode(String.self)
+            if let date = iso8601WithFractional.date(from: str) { return date }
+            if let date = iso8601Standard.date(from: str) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date: \(str)")
+        }
+        return decoder
+    }()
 
     // MARK: - Auth Token（登录令牌）
 
@@ -98,9 +125,7 @@ final class NetworkService {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw NetworkError.badResponse
         }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode([NetworkExhibition].self, from: data)
+        return try Self.sharedDecoder.decode([NetworkExhibition].self, from: data)
     }
 
     /// Publish a new exhibition to the server.
@@ -162,9 +187,7 @@ final class NetworkService {
             throw NetworkError.server(message: msg ?? "图片包含违规内容，无法发布")
         }
         guard http.statusCode == 201 else { throw NetworkError.badResponse }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(NetworkExhibition.self, from: data)
+        return try Self.sharedDecoder.decode(NetworkExhibition.self, from: data)
     }
 
     /// Upload an image to OSS via /upload-image. Returns the OSS URL, or nil if data is nil/empty.
@@ -254,9 +277,7 @@ final class NetworkService {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw NetworkError.badResponse
         }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode([NetworkTravelIdea].self, from: data)
+        return try Self.sharedDecoder.decode([NetworkTravelIdea].self, from: data)
     }
 
     /// Sync (replace) this user's travel ideas on the server. Returns all ideas from all users.
@@ -286,9 +307,7 @@ final class NetworkService {
 
         let (data, response) = try await session.data(for: request)
         try check(response, status: 200)
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode([NetworkTravelIdea].self, from: data)
+        return try Self.sharedDecoder.decode([NetworkTravelIdea].self, from: data)
     }
 
     // MARK: - User Auth API
@@ -307,7 +326,8 @@ final class NetworkService {
     func register(username: String, password: String) async throws -> (userId: String, username: String, token: String) {
         let body: [String: Any] = [
             "username": username,
-            "password": password
+            "password": password,
+            "deviceType": Self.deviceType
         ]
         let bodyData = try JSONSerialization.data(withJSONObject: body)
 
@@ -331,7 +351,8 @@ final class NetworkService {
     func login(username: String, password: String) async throws -> (userId: String, username: String, token: String) {
         let body: [String: Any] = [
             "username": username,
-            "password": password
+            "password": password,
+            "deviceType": Self.deviceType
         ]
         let bodyData = try JSONSerialization.data(withJSONObject: body)
 
@@ -349,6 +370,11 @@ final class NetworkService {
         }
         let err = (try? JSONDecoder().decode(AuthErrorResponse.self, from: data))?.error ?? "登录失败"
         throw NetworkError.server(message: err)
+    }
+
+    /// 当前设备类型：iPhone → "iphone"，iPad → "ipad"
+    private static var deviceType: String {
+        UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
     }
 
     // MARK: - Feedback API

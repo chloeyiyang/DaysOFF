@@ -1098,6 +1098,8 @@ struct SportPlansView: View {
                 Text(quickRows.allSatisfy { !$0.confirmed } ? "添加运动计划" : "添加新计划")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.5))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
 
                 Rectangle()
                     .fill(Color(red: 0.1, green: 0.2, blue: 0.5).opacity(0.4))
@@ -1578,13 +1580,21 @@ struct PlanDiaryPage: View {
                                             .stroke(Color.gray.opacity(0.12), lineWidth: 1)
                                     )
 
-                                // 奖杯：空心→金色实心
-                                Image(systemName: trophyEntryIds.contains(entry.id) ? "trophy.fill" : "trophy")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(trophyEntryIds.contains(entry.id) ? Color(red: 255/255, green: 193/255, blue: 37/255) : Color.gray.opacity(0.5))
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { toggleTrophy(for: entry) }
-                                    .padding(.top, 6)
+                                // 奖杯：仅最新一条笔记显示，空心→金色实心
+                                if entry.id == entries.last?.id {
+                                    Image(systemName: trophyEntryIds.contains(entry.id) ? "trophy.fill" : "trophy")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(trophyEntryIds.contains(entry.id) ? Color(red: 255/255, green: 193/255, blue: 37/255) : Color.gray.opacity(0.5))
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { toggleTrophy(for: entry) }
+                                        .padding(.top, 6)
+                                } else if trophyEntryIds.contains(entry.id) {
+                                    // 已获金奖杯的历史条目保留金色标记（不可再点击切换）
+                                    Image(systemName: "trophy.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(Color(red: 255/255, green: 193/255, blue: 37/255))
+                                        .padding(.top, 6)
+                                }
                             }
                             .padding(.horizontal, 30)
                         }

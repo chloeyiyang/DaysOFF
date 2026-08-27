@@ -28,10 +28,17 @@ function nowISO() {
 
 // ============ 鉴权与限流 ============
 
-// 签发登录令牌
-function issueToken(userId) {
+// 迁移：给已有 tokens 表补 device_type 列（已有库兼容）
+try {
+  db.prepare('ALTER TABLE tokens ADD COLUMN device_type TEXT NOT NULL DEFAULT \'iphone\'').run();
+} catch (e) { /* 列已存在，忽略 */ }
+
+// 签发登录令牌：同账号同类型设备仅保留最新一台（1 iPhone + 1 iPad 可共存）
+function issueToken(userId, deviceType) {
+  const dtype = deviceType === 'ipad' ? 'ipad' : 'iphone';
+  db.prepare('DELETE FROM tokens WHERE user_id = ? AND device_type = ?').run(userId, dtype);
   const token = crypto.randomBytes(32).toString('hex');
-  db.prepare('INSERT INTO tokens (token, user_id, created_at) VALUES (?, ?, ?)').run(token, userId, nowISO());
+  db.prepare('INSERT INTO tokens (token, user_id, device_type, created_at) VALUES (?, ?, ?, ?)').run(token, userId, dtype, nowISO());
   return token;
 }
 
@@ -298,8 +305,8 @@ app.get('/privacy', (req, res) => {
 <body>
   <div class="card">
     <h1>Days OFF</h1>
-    <div class="subtitle" id="subEn">Privacy Policy · Effective August 21, 2026</div>
-    <div class="subtitle" id="subZh" style="display:none">隐私政策 · 生效日期：2026年8月21日</div>
+    <div class="subtitle" id="subEn">Privacy Policy · Effective August 25, 2026</div>
+    <div class="subtitle" id="subZh" style="display:none">隐私政策 · 生效日期：2026年8月25日</div>
 
     <div class="lang-switch">
       <button id="btnEn" class="active" onclick="switchLang('en')">English</button>
@@ -584,6 +591,230 @@ function switchLang(lang) {
 </html>`);
 });
 
+// ============ Terms of Use 公开页（Apple App Store Terms of Use URL） ============
+
+app.get('/terms', (req, res) => {
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Days OFF · Terms of Use</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: rgb(250, 246, 236);
+    color: rgb(60, 55, 50);
+    min-height: 100vh;
+    display: flex; justify-content: center;
+    padding: 48px 20px;
+  }
+  .card {
+    background: rgb(252, 252, 249);
+    border-radius: 14px;
+    padding: 36px 32px;
+    max-width: 680px; width: 100%;
+    box-shadow: 0 2px 12px rgba(120, 100, 80, 0.08);
+  }
+  h1 { font-size: 22px; font-weight: 600; color: rgb(128, 0, 32); margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: rgb(140, 130, 120); margin-bottom: 16px; }
+  .lang-switch {
+    display: inline-flex; background: rgb(245, 240, 230);
+    border-radius: 8px; padding: 3px; font-size: 13px; margin-bottom: 24px;
+  }
+  .lang-switch button {
+    border: none; background: transparent; padding: 6px 14px;
+    border-radius: 6px; cursor: pointer; font-size: 13px;
+    color: rgb(80, 75, 70); font-family: inherit;
+  }
+  .lang-switch button.active {
+    background: rgb(252, 252, 249); color: rgb(128, 0, 32);
+    font-weight: 600; box-shadow: 0 1px 3px rgba(120, 100, 80, 0.15);
+  }
+  .lang-body { display: none; }
+  .lang-body.active { display: block; }
+  h2 { font-size: 15px; font-weight: 600; color: rgb(128, 0, 32); margin: 20px 0 8px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: rgb(60, 55, 50); }
+  p, li { font-size: 14px; line-height: 1.75; color: rgb(80, 75, 70); }
+  ul, ol { padding-left: 22px; margin: 6px 0; }
+  li { margin-bottom: 4px; }
+  a { color: rgb(128, 0, 32); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .intro { font-size: 14px; color: rgb(80, 75, 70); line-height: 1.75; }
+  .footer {
+    margin-top: 32px; padding-top: 18px;
+    border-top: 1px solid rgb(230, 222, 208);
+    font-size: 12px; color: rgb(160, 150, 140); text-align: center; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Days OFF</h1>
+    <div class="subtitle" id="subEn">Terms of Use · Effective August 25, 2026</div>
+    <div class="subtitle" id="subZh" style="display:none">用户协议 · 生效日期：2026年8月25日</div>
+
+    <div class="lang-switch">
+      <button id="btnEn" class="active" onclick="switchLang('en')">English</button>
+      <button id="btnZh" onclick="switchLang('zh')">中文</button>
+    </div>
+
+    <!-- ============ ENGLISH VERSION ============ -->
+    <div id="bodyEn" class="lang-body active">
+      <p class="intro">
+        Welcome to Days OFF ("the App"). Please read this User Agreement carefully
+        before using the App. By registering, logging in, or using the App, you
+        acknowledge that you have fully understood and agreed to all terms of this Agreement.
+      </p>
+
+      <h2>1. Account &amp; Registration</h2>
+      <ol>
+        <li>You must register your own account and set a password. Passwords are stored as SHA-256 salted hashes; the App does not save your plain-text password.</li>
+        <li>To ensure service stability and security, registration is limited to 5 requests per IP per hour, and login to 10 requests per IP per 5 minutes. Exceeding these limits will result in temporary rejection.</li>
+        <li>You should safeguard your account and password. Any losses caused by your disclosure, transfer, or authorized use by others are your responsibility.</li>
+      </ol>
+
+      <h2>2. Service Content</h2>
+      <p>The App provides the following features and corresponding data processing:</p>
+      <ol>
+        <li>Mood diary and sports records (plans, notes, three-cell texts, trophies);</li>
+        <li>Travel inspiration recording and event information;</li>
+        <li>Gallery artwork upload and display;</li>
+        <li>Milestone recording and "Me" page card management;</li>
+        <li>The above data syncs to the cloud server after you log in, enabling recovery when you change devices or reinstall the App.</li>
+      </ol>
+
+      <h2>3. User Conduct</h2>
+      <p>You agree not to engage in the following behaviors through the App:</p>
+      <ol>
+        <li>Uploading, storing, or distributing content that violates laws, regulations, or public order;</li>
+        <li>Using the App to infringe on others' intellectual property, portrait rights, privacy rights, or other legitimate interests;</li>
+        <li>Malicious attacks, crawling, or disrupting normal service on the App's servers;</li>
+        <li>Unauthorized access to others' data or sharing your account for commercial purposes.</li>
+      </ol>
+
+      <h2>4. Content &amp; Intellectual Property</h2>
+      <ol>
+        <li>Intellectual property of content (text, images, etc.) you upload belongs to you or the original rights holder.</li>
+        <li>You grant the App a non-exclusive, royalty-free, sublicensable, worldwide license, solely for display, sync, backup, and service improvement within the App.</li>
+        <li>You must ensure uploaded content does not infringe any third-party rights; otherwise you bear all legal responsibility.</li>
+      </ol>
+
+      <h2>5. Service Changes, Interruptions &amp; Termination</h2>
+      <ol>
+        <li>The App may suspend service due to system maintenance or upgrades, with advance notice when possible.</li>
+        <li>If you violate this Agreement, the App may restrict, suspend, or terminate your account.</li>
+        <li>You may clear local data and stop using the App at any time via "Log Out"; account deletion can be requested via the contact below.</li>
+      </ol>
+
+      <h2>6. Disclaimer</h2>
+      <ol>
+        <li>The App provides service "as is" without any express or implied warranties of continuity, security, or accuracy.</li>
+        <li>The App is not liable for losses caused by force majeure or third-party service failures (such as cloud storage or network providers), to the extent permitted by law.</li>
+      </ol>
+
+      <h2>7. Agreement Updates</h2>
+      <p>
+        This Agreement may be revised from time to time. Updates are posted on this page;
+        continued use after revision constitutes acceptance of the revised Agreement.
+      </p>
+
+      <h2>8. Contact Us</h2>
+      <p>For any questions or suggestions about this Agreement, email:</p>
+      <p style="margin-top:8px; background:rgb(245,240,230); border-radius:10px; padding:14px 18px; font-size:15px">
+        📧 <a href="mailto:support@daysoff-app.com">support@daysoff-app.com</a>
+      </p>
+    </div>
+
+    <!-- ============ CHINESE VERSION ============ -->
+    <div id="bodyZh" class="lang-body">
+      <p class="intro">
+        欢迎使用 Days OFF（以下简称「本应用」）。请您在使用本应用前仔细阅读并同意本《用户协议》。
+        您注册、登录或使用本应用即视为您已充分理解并同意本协议全部条款。
+      </p>
+
+      <h2>一、账号与注册</h2>
+      <ol>
+        <li>您需自行注册账号并设置密码，密码经 SHA-256 加盐哈希后存储，本应用不会以明文形式保存您的密码。</li>
+        <li>为保障服务稳定与安全，注册接口限每 IP 每小时 5 次，登录接口限每 IP 每 5 分钟 10 次，超出将被暂时拒绝。</li>
+        <li>您应妥善保管账号与密码，因您泄露、转让或授权他人使用而导致的损失由您自行承担。</li>
+      </ol>
+
+      <h2>二、服务内容</h2>
+      <p>本应用为您提供以下功能及对应的数据处理：</p>
+      <ol>
+        <li>心情日记与运动记录（运动计划、运动笔记、三格文字、奖杯）；</li>
+        <li>旅行灵感记录与赛事信息；</li>
+        <li>画廊作品的上传与展示；</li>
+        <li>里程碑记录与"我的"页面卡片管理；</li>
+        <li>上述数据在您登录后将同步至云端服务器，便于您在更换设备或重装应用后恢复。</li>
+      </ol>
+
+      <h2>三、用户行为规范</h2>
+      <p>您承诺不通过本应用从事下列行为：</p>
+      <ol>
+        <li>上传、存储或传播违反法律法规或公序良俗的内容；</li>
+        <li>利用本应用从事侵害他人知识产权、肖像权、隐私权等合法权益的行为；</li>
+        <li>对本应用服务器进行恶意攻击、爬取、刷量或干扰正常服务；</li>
+        <li>未经授权访问他人数据或共享自身账号给他人用于商业用途。</li>
+      </ol>
+
+      <h2>四、内容与知识产权</h2>
+      <ol>
+        <li>您上传的文字、图片等内容（以下简称"用户内容"）知识产权归您或原权利人所有。</li>
+        <li>您授予本应用非排他、无偿、可转授权的全球性许可，仅用于在本应用内展示、同步、备份及改进服务所必需的处理。</li>
+        <li>您应保证上传的用户内容不侵犯任何第三方合法权益，否则由您自行承担全部法律责任。</li>
+      </ol>
+
+      <h2>五、服务的变更、中断与终止</h2>
+      <ol>
+        <li>本应用可能因系统维护、升级等原因暂停服务，并将尽量提前公告。</li>
+        <li>如您违反本协议，本应用有权限制、暂停或终止您的账号使用。</li>
+        <li>您可随时通过"退出登录"清除本地数据并停止使用；账号注销可通过文末联系方式提出。</li>
+      </ol>
+
+      <h2>六、免责声明</h2>
+      <ol>
+        <li>本应用提供"按现状"服务，不就服务的连续性、安全性、准确性作出任何明示或默示的保证。</li>
+        <li>因不可抗力、第三方服务（如云存储、网络运营商）故障导致的损失，本应用在法律允许范围内不承担责任。</li>
+      </ol>
+
+      <h2>七、协议更新</h2>
+      <p>
+        本协议可能适时修订，更新后将在本页面公布；如您在修订后继续使用本应用，即视为同意修订后的协议。
+      </p>
+
+      <h2>八、联系我们</h2>
+      <p>如对本协议有任何疑问或建议，请通过以下邮箱联系我们：</p>
+      <p style="margin-top:8px; background:rgb(245,240,230); border-radius:10px; padding:14px 18px; font-size:15px">
+        📧 <a href="mailto:support@daysoff-app.com">support@daysoff-app.com</a>
+      </p>
+    </div>
+
+    <div class="footer">
+      Days OFF · © 2026 DaysOff Team<br>
+      App Store Terms of Use URL · <a href="/privacy">Privacy Policy</a> · <a href="/support">Support</a>
+    </div>
+  </div>
+
+<script>
+function switchLang(lang) {
+  document.getElementById('bodyEn').classList.toggle('active', lang === 'en');
+  document.getElementById('bodyZh').classList.toggle('active', lang === 'zh');
+  document.getElementById('subEn').style.display   = lang === 'en' ? 'block' : 'none';
+  document.getElementById('subZh').style.display   = lang === 'zh' ? 'block' : 'none';
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>`);
+});
+
 // ============ 展览 ============
 
 // GET /exhibitions?userId=xxx — 获取展览列表（过滤被拉黑用户的展览）
@@ -731,7 +962,7 @@ app.post('/users/register', rateLimit('register', 5, 60 * 60 * 1000), (req, res)
     const createdAt = nowISO();
     db.prepare('INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)')
       .run(id, username, hash, createdAt);
-    res.status(201).json({ userId: id, username, token: issueToken(id) });
+    res.status(201).json({ userId: id, username, token: issueToken(id, req.body.deviceType) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal error' });
@@ -755,7 +986,7 @@ app.post('/users/login', rateLimit('login', 10, 5 * 60 * 1000), (req, res) => {
     if (hash !== user.password_hash) {
       return res.status(401).json({ error: '用户名或密码错误' });
     }
-    res.json({ userId: user.id, username: user.username, token: issueToken(user.id) });
+    res.json({ userId: user.id, username: user.username, token: issueToken(user.id, req.body.deviceType) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal error' });

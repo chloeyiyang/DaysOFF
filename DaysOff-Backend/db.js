@@ -85,9 +85,11 @@ db.exec(`
   );
 
   -- 登录令牌：Bearer token → userId
+  -- device_type: 'iphone' / 'ipad'，用于同账号同类型设备仅保留最新一台
   CREATE TABLE IF NOT EXISTS tokens (
     token TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    device_type TEXT NOT NULL DEFAULT 'iphone',
     created_at TEXT NOT NULL
   );
 

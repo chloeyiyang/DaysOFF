@@ -1091,7 +1091,7 @@ struct MyPageView: View {
                     logout()
                 }
             } message: {
-                Text("确定要退出登录吗？所有保存的内容将被清除。")
+                Text("确定要退出登录吗？本设备上的数据将被清除，重新登录后可从服务器恢复。")
             }
         }
     }
@@ -1456,7 +1456,7 @@ struct MyPageView: View {
                             VStack(spacing: 0) {
                                 aboutRow(label: "本应用名称", value: "Days OFF")
                                 Divider().padding(.leading, 20)
-                                aboutRow(label: "版本号", value: "1.0.0")
+                                aboutRow(label: "版本号", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.3")
                                 Divider().padding(.leading, 20)
                                 aboutRow(label: "发布时间", value: "2026年8月")
                             }
@@ -1804,7 +1804,7 @@ struct MyPageView: View {
     五、服务的变更、中断与终止
     1. 本应用可能因系统维护、升级等原因暂停服务，并将尽量提前公告。
     2. 如您违反本协议，本应用有权限制、暂停或终止您的账号使用。
-    3. 您可随时通过"退出登录"清除本地数据并停止使用；账号注销可通过文末联系方式提出。
+    3. 您可随时通过"退出登录"清除本地数据并停止使用；账号注销可在"设置"中自助操作完成。
 
     六、免责声明
     1. 本应用提供"按现状"服务，不就服务的连续性、安全性、准确性作出任何明示或默示的保证。

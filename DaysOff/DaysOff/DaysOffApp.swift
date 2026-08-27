@@ -825,7 +825,8 @@ struct TermsAgreementView: View {
                         showFull: $showFullPrivacy
                     )
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 60)
+                .padding(.top, 8)
                 .padding(.bottom, 12)
             }
 
@@ -850,7 +851,7 @@ struct TermsAgreementView: View {
                         .padding(.vertical, 6)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 60)
             .padding(.bottom, 32)
             .padding(.top, 8)
         }
@@ -906,14 +907,15 @@ struct TermsAgreementView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            // 云舞白底 + 薰衣草紫边框，与页面 accentColor / 勾选图标色调一致
-            RoundedRectangle(cornerRadius: 12)
+            // 云舞白底 + 薰衣草紫边框，无圆角
+            Rectangle()
                 .fill(cloudDancerWhite)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    Rectangle()
                         .stroke(accentColor, lineWidth: 1.5)
                 )
         )
+        .tint(.white)  // 折叠/展开箭头改为白色
         .onChange(of: showFull.wrappedValue) { isExpanded in
             // 折叠（关闭展开）时标记为已读
             if !isExpanded {
@@ -965,7 +967,7 @@ struct TermsAgreementView: View {
 
     五、服务的变更、中断与终止
     因维护、升级等可能暂停服务；违反协议将限制或终止账号；
-    可随时退出登录清数据；账号注销可通过文末联系方式提出。
+    可随时退出登录清数据；账号注销可在"设置"中自助操作完成。
 
     六、免责声明
     服务按现状提供；因不可抗力或第三方服务故障导致的损失，法律允许范围内不承担责任。
