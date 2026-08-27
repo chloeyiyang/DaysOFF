@@ -1450,9 +1450,9 @@ struct MyPageView: View {
             GeometryReader { geo in
                 ScrollView {
                     VStack(spacing: 0) {
-                        // 上半屏：三行信息卡片向上移（留出更多空间给下方留言区）
+                        // 上半屏：三行信息卡片（比例缩小，让下方留言表单整体上移更多）
                         VStack(spacing: 0) {
-                            Color.clear.frame(height: geo.size.height * 0.18)
+                            Color.clear.frame(height: geo.size.height * 0.10)
                             VStack(spacing: 0) {
                                 aboutRow(label: "本应用名称", value: "Days OFF")
                                 Divider().padding(.leading, 20)
@@ -1467,12 +1467,12 @@ struct MyPageView: View {
                             .padding(.horizontal, 20)
                             Spacer(minLength: 0)
                         }
-                        .frame(width: geo.size.width, height: max(geo.size.height / 2 - 12, 0), alignment: .top)
+                        .frame(width: geo.size.width, height: max(geo.size.height * 0.40, 0), alignment: .top)
 
-                        // 中间空行（位于屏幕中间）
-                        Color.clear.frame(height: 24)
+                        // 中间空行
+                        Color.clear.frame(height: 8)
 
-                        // 下半屏：留言表单贴顶
+                        // 下半屏：留言表单贴顶（比例放大，使整体位置上移）
                         VStack(spacing: 0) {
                             feedbackFormCard
                             Spacer(minLength: 0)
@@ -1490,7 +1490,7 @@ struct MyPageView: View {
                             .padding(.top, 16)
                             .padding(.bottom, 20)
                         }
-                        .frame(width: geo.size.width, height: max(geo.size.height / 2 - 12, 0), alignment: .top)
+                        .frame(width: geo.size.width, height: max(geo.size.height * 0.60, 0), alignment: .top)
                     }
                 }
             }
