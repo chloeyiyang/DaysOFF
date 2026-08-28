@@ -1456,7 +1456,7 @@ struct MyPageView: View {
                             VStack(spacing: 0) {
                                 aboutRow(label: "本应用名称", value: "Days OFF")
                                 Divider().padding(.leading, 20)
-                                aboutRow(label: "版本号", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.4")
+                                aboutRow(label: "版本号", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.5")
                                 Divider().padding(.leading, 20)
                                 aboutRow(label: "发布时间", value: "2026年8月")
                             }

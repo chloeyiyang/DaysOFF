@@ -1007,7 +1007,9 @@ struct SportPlansView: View {
     let sportsKeywords = [
         "足球", "篮球", "网球", "乒乓球", "羽毛球", "跑步", "快走", "壁球", "排球", "匹克球",
         "瑜伽", "普拉提", "游泳", "滑板", "攀岩",
-        "滑冰", "滑雪", "骑行", "力量训练", "重训"
+        "滑冰", "滑雪", "骑行", "力量训练", "重训",
+        "马拉松",
+        "棒球", "蛙泳", "蝶泳", "仰泳", "自由泳", "抱石", "单板", "冲浪", "徒步", "爬山", "芭蕾", "跳操"
     ]
 
     private var savedPlansKey: String {
@@ -1501,7 +1503,7 @@ struct PlanDiaryPage: View {
             VStack(spacing: 16) {
                 HStack {
                     Spacer()
-                    Text(sport.isEmpty ? "运动笔记" : "\(sport)运动笔记")
+                    Text(sport.isEmpty || sport == "自定义运动" ? "自定义运动笔记" : "\(sport)运动笔记")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.5))
                     Spacer()

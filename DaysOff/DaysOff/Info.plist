@@ -53,5 +53,7 @@
     <string>打开麦克风语音输入您的心情手记，便于您快速记录。再次点击关闭语音输入。</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>打开麦克风语音输入您的心情手记，便于您快速记录。再次点击关闭语音输入。</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 </dict>
 </plist>

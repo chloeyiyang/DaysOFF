@@ -817,10 +817,20 @@ function switchLang(lang) {
 
 // ============ 展览 ============
 
-// GET /exhibitions?userId=xxx — 获取展览列表（过滤被拉黑用户的展览）
+// 解析中文日期 "8月26日" 为 Date 对象（补当前年份）
+function parseChineseDate(str) {
+  if (!str) return null;
+  const m = /^(\d{1,2})月(\d{1,2})日$/.exec(str);
+  if (!m) return null;
+  const year = new Date().getFullYear();
+  return new Date(year, parseInt(m[1]) - 1, parseInt(m[2]));
+}
+
+// GET /exhibitions?userId=xxx — 获取展览列表（过滤被拉黑用户的展览 + 过滤已过期展览）
 app.get('/exhibitions', (req, res) => {
   try {
     const exhibitions = db.prepare('SELECT * FROM exhibitions ORDER BY timestamp DESC').all();
+    const now = new Date();
 
     let blockedIds = [];
     if (req.query.userId) {
@@ -830,6 +840,14 @@ app.get('/exhibitions', (req, res) => {
 
     const result = exhibitions
       .filter(e => !blockedIds.includes(e.user_id))
+      .filter(e => {
+        // endDate 为空或解析失败 → 保留（容错）
+        const end = parseChineseDate(e.end_date);
+        if (!end) return true;
+        // endDate 当天算未过期（到第二天才隐藏）
+        end.setHours(23, 59, 59, 999);
+        return end >= now;
+      })
       .map(rowToExhibition);
 
     res.json(result);
