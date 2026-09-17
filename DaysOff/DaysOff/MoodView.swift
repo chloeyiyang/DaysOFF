@@ -454,8 +454,8 @@ struct FeelingResultView: View {
                         .frame(height: 60)
 
                     VStack(spacing: 14) {
-                        Text(L("给自己一分钟时间", "Take A Moment For Yourself"))
-                            .font(.pingFang(size: 28, weight: .bold))
+                        Text(L("给自己一分钟时间", "Take a Moment for Yourself"))
+                            .font(.pingFang(size: 24, weight: .bold))
                             .multilineTextAlignment(.center)
                             .foregroundColor(sandBrown)
 

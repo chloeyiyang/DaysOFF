@@ -1549,15 +1549,8 @@ struct PlanDiaryPage: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .bottom) {
-            // ====== 背景层：点击外部结束格子输入 ======
-            if activeCell != nil {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture { commitCell(activeCell!) }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea()
-            }
             // ============ 主内容：标题 + 三个格子 + 已有笔记 ============
+            // 点击空白处收起键盘 / 提交格子编辑（子视图的 onTapGesture 优先级更高，不影响格子与奖杯）
             VStack(spacing: 16) {
                 HStack {
                     Spacer()
@@ -1667,6 +1660,11 @@ struct PlanDiaryPage: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if activeCell != nil { commitCell(activeCell!) }
+                if inputFocused { inputFocused = false }
+            }
 
             // ============ 底部奶油色通栏 + 白色输入框居中 ============
             creamInputBar

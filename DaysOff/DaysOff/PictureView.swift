@@ -802,7 +802,7 @@ struct PictureView: View {
                 .onTapGesture { showUploadConfirm = false }
 
             VStack(spacing: 20) {
-                Text(L("请确认这是您的原创作品", "Please confirm this is your original work"))
+                Text(L("请确认这是您的原创作品", "This is your original work"))
                     .font(.pingFang(size: 18, weight: .medium))
                     .foregroundColor(.pictureTextDark)
                     .multilineTextAlignment(.center)
