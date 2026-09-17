@@ -374,7 +374,7 @@ final class NetworkService {
 
     /// 当前设备类型：iPhone → "iphone"，iPad → "ipad"
     private static var deviceType: String {
-        UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+        UITraitCollection.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
     }
 
     // MARK: - Feedback API

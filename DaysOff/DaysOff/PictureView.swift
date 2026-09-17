@@ -446,7 +446,7 @@ struct PictureView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
-                .onChange(of: selectedPhoto) { newItem in
+                .onChange(of: selectedPhoto) { _, newItem in
                     handlePhotoSelection(newItem)
                 }
 
@@ -493,7 +493,7 @@ struct PictureView: View {
                         )
 
                     // Hint text
-                    Text("拖动图片到上方放置")
+                    Text(L("拖动图片到上方放置", "Drag image to place above"))
                         .font(.pingFang(size: 14, weight: .medium))
                         .foregroundColor(.gray)
                         .position(x: contentGeo.size.width / 2, y: contentGeo.size.height / 2 + 120)
@@ -562,7 +562,7 @@ struct PictureView: View {
 
     private var headerView: some View {
         VStack(spacing: 4) {
-            Text("\(username)的作品")
+            Text(L("\(username)的作品", "\(username)'s Works"))
                 .font(.pingFang(size: 24, weight: .bold))
                 .foregroundColor(Color(red: 218/255, green: 136/255, blue: 144/255))
         }
@@ -624,21 +624,21 @@ struct PictureView: View {
     private func typeDropdown(for index: Int, selectedType: String?) -> some View {
         Menu {
             ForEach(artworkTypes, id: \.self) { type in
-                Button(type) {
+                Button(A(type)) {
                     sections[index].type = type
                     saveSections()   // 选完类型后自动保存
                 }
             }
             if selectedType != nil {
                 Divider()
-                Button("清除选择", role: .destructive) {
+                Button(L("清除选择", "Clear Selection"), role: .destructive) {
                     sections[index].type = nil
                     saveSections()   // 清除后也自动保存
                 }
             }
         } label: {
             HStack(spacing: 4) {
-                Text(selectedType ?? "请选择类型")
+                Text(selectedType.map { A($0) } ?? L("请选择类型", "Select Type"))
                     .font(.pingFang(size: 14, weight: .medium))
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10))
@@ -730,7 +730,7 @@ struct PictureView: View {
             Button(action: {
                 showUploadConfirm = true
             }) {
-                Text("点击上传")
+                Text(L("点击上传", "Tap to Upload"))
                     .font(.pingFang(size: 15, weight: .medium))
                     .foregroundColor(.white)
                     .frame(width: 140, height: 38)
@@ -743,7 +743,7 @@ struct PictureView: View {
                 exhibitionSelectedIds = []
                 showExhibitionSelection = true
             }) {
-                Text("开设展览")
+                Text(L("开设展览", "Open Exhibition"))
                     .font(.pingFang(size: 15, weight: .medium))
                     .foregroundColor(.white)
                     .frame(width: 140, height: 38)
@@ -802,7 +802,7 @@ struct PictureView: View {
                 .onTapGesture { showUploadConfirm = false }
 
             VStack(spacing: 20) {
-                Text("请确认这是您的原创作品")
+                Text(L("请确认这是您的原创作品", "Please confirm this is your original work"))
                     .font(.pingFang(size: 18, weight: .medium))
                     .foregroundColor(.pictureTextDark)
                     .multilineTextAlignment(.center)
@@ -833,7 +833,7 @@ struct PictureView: View {
                     .foregroundColor(.pictureTextDark)
                 
                 Button(action: { errorMessage = "" }) {
-                    Text("确定")
+                    Text(L("确定", "Confirm"))
                         .font(.system(size: 16))
                         .foregroundColor(.white)
                         .padding(.horizontal, 32)
@@ -857,11 +857,11 @@ struct PictureView: View {
             
             VStack(spacing: 16) {
                 HStack {
-                    Text("选择10幅作品开设画展")
+                    Text(L("选择10幅作品开设画展", "Select 10 artworks to open an exhibition"))
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
                     Spacer()
-                    Text("已选 \(exhibitionSelectedIds.count)/10")
+                    Text(L("已选 \(exhibitionSelectedIds.count)/10", "Selected \(exhibitionSelectedIds.count)/10"))
                         .font(.system(size: 14))
                         .foregroundColor(.white.opacity(0.8))
                 }
@@ -907,7 +907,7 @@ struct PictureView: View {
                         showExhibitionSelection = false
                         exhibitionSelectedIds = []
                     }) {
-                        Text("取消")
+                        Text(L("取消", "Cancel"))
                             .font(.system(size: 16))
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
@@ -925,7 +925,7 @@ struct PictureView: View {
                             navigateToGallery = true
                         }
                     }) {
-                        Text("确定")
+                        Text(L("确定", "Confirm"))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
@@ -947,13 +947,13 @@ struct PictureView: View {
                 .onTapGesture { deleteConfirmPainting = nil }
 
             VStack(spacing: 16) {
-                Text("确认删除这幅作品？")
+                Text(L("确认删除这幅作品？", "Delete this artwork?"))
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.pictureTextDark)
 
                 HStack(spacing: 24) {
                     Button(action: { deleteConfirmPainting = nil }) {
-                        Text("取消")
+                        Text(L("取消", "Cancel"))
                             .font(.system(size: 16))
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
@@ -968,7 +968,7 @@ struct PictureView: View {
                         }
                         deleteConfirmPainting = nil
                     }) {
-                        Text("删除")
+                        Text(L("删除", "Delete"))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
@@ -1120,7 +1120,7 @@ struct PictureView: View {
         }
 
         guard let data = try? JSONEncoder().encode(saved) else {
-            saveMessage = "保存失败，请重试"
+            saveMessage = L("保存失败，请重试", "Save failed, please retry")
             scheduleClearSaveMessage()
             return
         }
@@ -1129,10 +1129,17 @@ struct PictureView: View {
 
         let total = sections.reduce(0) { $0 + $1.pictures.count }
         let typesCount = sections.filter { $0.type != nil }.count
+        let isEn = L("zh", "en") == "en"
+        let picWord = total == 1 ? "Picture" : "Pictures"
+        let catWord = typesCount == 1 ? "Category" : "Categories"
         if typesCount == sections.count && !sections.isEmpty {
-            saveMessage = "已保存 \(total) 张作品，\(typesCount) 个分类"
+            saveMessage = isEn
+                ? "Saved \(total) \(picWord), \(typesCount) \(catWord)"
+                : "已保存 \(total) 张作品，\(typesCount) 个分类"
         } else {
-            saveMessage = "已保存 \(total) 张作品"
+            saveMessage = isEn
+                ? "Saved \(total) \(picWord)"
+                : "已保存 \(total) 张作品"
         }
         scheduleClearSaveMessage()
     }

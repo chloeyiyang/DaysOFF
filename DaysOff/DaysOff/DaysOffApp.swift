@@ -172,7 +172,7 @@ struct MultiUserTabView: View {
             }
         }
         // 前台/后台标志法：检测上次会话是否异常结束（崩溃/卡死被系统终止）
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 AppStats.sessionDidBecomeActive()
             } else if phase == .background {
@@ -291,7 +291,7 @@ struct LandingView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let btnWidth: CGFloat = 160
+            let btnWidth: CGFloat = 180
             let btnCenterX = geo.size.width / 2
             let btnY = geo.size.height * 0.382 - 32 + 48 + 10 + geo.size.height * 0.25 + 25  // 登陆按钮中心 Y
             let btnLeftX = btnCenterX - btnWidth / 2
@@ -350,10 +350,18 @@ struct LandingView: View {
                     Spacer()
                         .frame(height: geo.size.height * 0.25)
 
-                    // 登陆按钮（勃艮第酒红）
+                    // 登录按钮（勃艮第酒红）— 首次进入页面双语显示，| 居中
                     Button(action: onTapLogin) {
-                        Text("登陆")
-                            .font(.pingFang(size: 18, weight: .semibold))
+                        HStack(spacing: 0) {
+                            Text("登 录")
+                                .font(.pingFang(size: 18, weight: .semibold))
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                            Text(" | ")
+                                .font(.pingFang(size: 18, weight: .semibold))
+                            Text("Log In")
+                                .font(.pingFang(size: 15, weight: .semibold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                             .foregroundColor(.white)
                             .frame(width: btnWidth, height: 50)
                             .background(
@@ -363,10 +371,18 @@ struct LandingView: View {
                     }
                     .padding(.bottom, 16)
 
-                    // 注册按钮
+                    // 注册按钮 — 首次进入页面双语显示，| 居中
                     Button(action: onTapRegister) {
-                        Text("注册")
-                            .font(.pingFang(size: 18, weight: .semibold))
+                        HStack(spacing: 0) {
+                            Text("注 册")
+                                .font(.pingFang(size: 18, weight: .semibold))
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                            Text(" | ")
+                                .font(.pingFang(size: 18, weight: .semibold))
+                            Text("Sign Up")
+                                .font(.pingFang(size: 15, weight: .semibold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                             .foregroundColor(burgundy)
                             .frame(width: btnWidth, height: 50)
                             .background(
@@ -566,7 +582,7 @@ struct LoginView: View {
             VStack {
                 Spacer()
                 VStack(spacing: 36) {
-                    Text("登陆")
+                    Text(L("登陆", "Log In"))
                         .font(.pingFang(size: 18, weight: .semibold))
                         .foregroundColor(brownText)
 
@@ -583,7 +599,7 @@ struct LoginView: View {
                     }
 
                     Button(action: submit) {
-                        Text("确认登陆")
+                        Text(L("确认登陆", "Confirm Login"))
                             .font(.pingFang(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(width: 200, height: 50)
@@ -682,7 +698,7 @@ struct RegisterView: View {
             VStack {
                 Spacer()
                 VStack(spacing: 36) {
-                    Text("新用户注册")
+                    Text(L("新用户注册", "New User Sign Up"))
                         .font(.pingFang(size: 18, weight: .semibold))
                         .foregroundColor(brownText)
 
@@ -700,7 +716,7 @@ struct RegisterView: View {
                     }
 
                     Button(action: submit) {
-                        Text("注册")
+                        Text(L("注册", "Sign Up"))
                             .font(.pingFang(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(width: 200, height: 50)
@@ -744,6 +760,8 @@ struct RegisterView: View {
         }
         Task {
             guard let (uid, uname) = await auth.register(username: trimmed, password: password) else { return }
+            // 首次注册默认后续界面为中文
+            UserDefaults.standard.set("zh", forKey: "app_language")
             savedUserId = uid
             savedUsername = uname
             onSuccess()
@@ -794,13 +812,13 @@ struct TermsAgreementView: View {
             VStack(spacing: 6) {
                 // "欢迎来到" PingFang SC + "Days OFF" IowanOldStyle-Bold，
                 // 与首页/我的页中 Days OFF 字体一致
-                (Text("欢迎来到 ")
+                (Text(L("欢迎来到 ", "Welcome to "))
                     .font(.pingFang(size: 22, weight: .semibold))
                 + Text("Days OFF")
                     .font(.custom("IowanOldStyle-Bold", size: 22)))
                 .foregroundColor(inkColor)
 
-                Text("使用前请展开阅读并同意以下协议")
+                Text(L("使用前请展开阅读并同意以下协议", "Please read and agree to the following terms before use"))
                     .font(.pingFang(size: 14, weight: .regular))
                     .foregroundColor(inkColor.opacity(0.7))
             }
@@ -844,7 +862,7 @@ struct TermsAgreementView: View {
                 .disabled(!canAgree)
 
                 Button(action: { showDisagreeAlert = true }) {
-                    Text("不同意")
+                    Text(L("不同意", "Disagree"))
                         .font(.pingFang(size: 15, weight: .regular))
                         .foregroundColor(inkColor.opacity(0.6))
                         .frame(maxWidth: .infinity)
@@ -857,20 +875,20 @@ struct TermsAgreementView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(paperWhite.ignoresSafeArea())
-        .alert("提示", isPresented: $showDisagreeAlert) {
-            Button("仍不同意", role: .destructive) {
+        .alert(L("提示", "Notice"), isPresented: $showDisagreeAlert) {
+            Button(L("仍不同意", "Still Disagree"), role: .destructive) {
                 showBlockedAlert = true
             }
-            Button("同意并继续") {
+            Button(L("同意并继续", "Agree and Continue")) {
                 onAgree()
             }
         } message: {
-            Text("若您不同意本协议，将无法使用本应用。是否仍不同意？")
+            Text(L("若您不同意本协议，将无法使用本应用。是否仍不同意？", "If you disagree with the terms, you cannot use this app. Do you still disagree?"))
         }
-        .alert("无法使用", isPresented: $showBlockedAlert) {
-            Button("重新阅读", role: .cancel) {}
+        .alert(L("无法使用", "Cannot Use"), isPresented: $showBlockedAlert) {
+            Button(L("重新阅读", "Re-read"), role: .cancel) {}
         } message: {
-            Text("您需要同意协议才能继续使用本应用。")
+            Text(L("您需要同意协议才能继续使用本应用。", "You need to agree to the terms to continue using this app."))
         }
     }
 
@@ -916,7 +934,7 @@ struct TermsAgreementView: View {
                 )
         )
         .tint(.white)  // 折叠/展开箭头改为白色
-        .onChange(of: showFull.wrappedValue) { isExpanded in
+        .onChange(of: showFull.wrappedValue) { _, isExpanded in
             // 折叠（关闭展开）时标记为已读
             if !isExpanded {
                 hasRead.wrappedValue = true
@@ -937,7 +955,7 @@ struct TermsAgreementView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("关闭") { onClose() }
+                    Button(L("关闭", "Close")) { onClose() }
                 }
             }
         }

@@ -212,8 +212,8 @@ struct ContentView: View {
 
             // Custom compact tab bar: 首页 + 我的 close together
             HStack(spacing: 16) {
-                tabButton(index: 0, title: "首页", icon: "house.fill")
-                tabButton(index: 1, title: "我的", icon: "person.circle.fill")
+                tabButton(index: 0, title: L("首页", "Home"), icon: "house.fill")
+                tabButton(index: 1, title: L("我的", "My"), icon: "person.circle.fill")
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 24)

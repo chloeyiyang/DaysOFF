@@ -506,16 +506,16 @@ struct MatchView: View {
         .onDisappear {
             stopIdeaPolling()
         }
-        .onChange(of: userInput) { newValue in
+        .onChange(of: userInput) { _, newValue in
             draftUserInput = newValue
         }
-        .onChange(of: templateCity) { newValue in
+        .onChange(of: templateCity) { _, newValue in
             draftTemplateCity = newValue
         }
-        .onChange(of: templateAction) { newValue in
+        .onChange(of: templateAction) { _, newValue in
             draftTemplateAction = newValue
         }
-        .onChange(of: showTemplate) { newValue in
+        .onChange(of: showTemplate) { _, newValue in
             draftShowTemplate = newValue
         }
     }
@@ -542,7 +542,7 @@ struct MatchView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "heart.fill")
                             .foregroundColor(.tripMatchPink)
-                        Text("匹配: \(matchedLandmarks.count)")
+                        Text(L("匹配: \(matchedLandmarks.count)", "Matches: \(matchedLandmarks.count)"))
                             .font(.subheadline)
                             .foregroundColor(.tripTextBrown)
                     }
@@ -559,7 +559,7 @@ struct MatchView: View {
     private var matchesView: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("🎉 共同想去的地方")
+                Text(L("🎉 共同想去的地方", "🎉 Shared Destinations"))
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.tripTextBrown)
                 Spacer()
@@ -579,7 +579,7 @@ struct MatchView: View {
                             .padding(.vertical, 8)
                             .background(Color.tripMatchPink)
                             .cornerRadius(20)
-                        Text("与 \(match.matchedUserName)")
+                        Text(L("与 \(match.matchedUserName)", "With \(match.matchedUserName)"))
                             .font(.system(size: 12))
                             .foregroundColor(.tripTextBrown.opacity(0.7))
                     }
@@ -599,7 +599,7 @@ struct MatchView: View {
                 Button(action: {
                     showInput.toggle()
                 }) {
-                    Text("新的旅行灵感")
+                    Text(L("新的旅行灵感", "New Travel Inspiration"))
                         .font(.pingFang(size: 18, weight: .heavy))
                         .foregroundColor(.black)
                         .padding(.vertical, 12)
@@ -629,7 +629,7 @@ struct MatchView: View {
 
                 if users[currentUserIndex].ideas.filter({ $0.destination != "未知目的地" }).count > 0 {
                     Button(action: { showDepartPopup = true }) {
-                        Text("准备出发")
+                        Text(L("准备出发", "Ready to Go"))
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(Color(red: 0.95, green: 0.94, blue: 0.96))
                             .padding(.vertical, 10)
@@ -664,12 +664,12 @@ struct MatchView: View {
                 .onTapGesture { showDepartPopup = false }
             
             VStack(spacing: 16) {
-                Text("选择目的地")
+                Text(L("选择目的地", "Select Destination"))
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.tripTextBrown)
                     .padding(.top, 16)
-                
-                Text("已准备好去...")
+
+                Text(L("已准备好去...", "Ready to go to..."))
                     .font(.system(size: 14))
                     .foregroundColor(.tripTextBrown.opacity(0.7))
                 
@@ -686,7 +686,7 @@ struct MatchView: View {
                                 
                                 Spacer()
                                 
-                                Text("\(destInfo.ideas.count) 个灵感")
+                                Text(L("\(destInfo.ideas.count) 个灵感", "\(destInfo.ideas.count) ideas"))
                                     .font(.system(size: 12))
                                     .foregroundColor(.tripTextBrown.opacity(0.5))
                             }
@@ -700,7 +700,7 @@ struct MatchView: View {
                 .padding(.horizontal, 16)
                 
                 Button(action: { showDepartPopup = false }) {
-                    Text("取消")
+                    Text(L("取消", "Cancel"))
                         .font(.system(size: 14))
                         .foregroundColor(.tripTextBrown.opacity(0.6))
                 }
@@ -772,7 +772,7 @@ struct MatchView: View {
         return VStack(spacing: 12) {
             ZStack(alignment: .topTrailing) {
                 if isUnknown {
-                    TextField("输入目的地", text: Binding(
+                    TextField(L("输入目的地", "Enter destination"), text: Binding(
                         get: { "" },
                         set: { newValue in
                             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -879,11 +879,17 @@ struct MatchView: View {
     }
 
     /// Extract "旅行灵感N" from title like "旅行灵感1 - 镰仓"
+    /// English 模式下显示为 "Travel Idea N"，存储数据保持中文不变
     private func ideaShortTitle(_ idea: TravelIdea) -> String {
+        let raw: String
         if let dashRange = idea.title.range(of: " - ") {
-            return String(idea.title[..<dashRange.lowerBound])
+            raw = String(idea.title[..<dashRange.lowerBound])
+        } else {
+            raw = idea.title
         }
-        return idea.title
+        let lang = UserDefaults.standard.string(forKey: "app_language") ?? "zh"
+        guard lang == "en" else { return raw }
+        return raw.replacingOccurrences(of: "旅行灵感", with: "Travel Idea ")
     }
 
     /// Truncate content to max 20 characters
@@ -899,16 +905,16 @@ struct MatchView: View {
             Group {
                 if showTemplate {
                     HStack(spacing: 4) {
-                        Text("我想去")
+                        Text(L("我想去", "I want to go to"))
                             .font(.system(size: 18))
                             .foregroundColor(.tripTextBrown)
 
-                        TextField("城市名", text: $templateCity)
+                        TextField(L("城市名", "City"), text: $templateCity)
                             .font(.system(size: 18))
                             .foregroundColor(.tripTextBrown)
                             .frame(width: 70)
 
-                        TextField("干什么", text: $templateAction)
+                        TextField(L("干什么", "Do what"), text: $templateAction)
                             .font(.system(size: 18))
                             .foregroundColor(.tripTextBrown)
                             .frame(maxWidth: .infinity)
@@ -950,7 +956,7 @@ struct MatchView: View {
                     }
                 }
             }) {
-                Text("确定")
+                Text(L("确定", "Confirm"))
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.white)
                     .padding(.vertical, 12)
@@ -1064,13 +1070,13 @@ struct MatchView: View {
                 .onTapGesture { deleteConfirmation = nil }
             
             VStack(spacing: 16) {
-                Text("确定要删除吗？")
+                Text(L("确定要删除吗？", "Are you sure to delete?"))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.tripTextBrown)
-                
+
                 HStack(spacing: 24) {
                     Button(action: { deleteConfirmation = nil }) {
-                        Text("否")
+                        Text(L("否", "No"))
                             .font(.system(size: 14))
                             .foregroundColor(.tripTextBrown.opacity(0.7))
                             .padding(.horizontal, 24)
@@ -1078,12 +1084,12 @@ struct MatchView: View {
                             .background(Color.tripPostItWhite)
                             .cornerRadius(4)
                     }
-                    
+
                     Button(action: {
                         deleteIdea(ideaId: confirm.ideaId)
                         deleteConfirmation = nil
                     }) {
-                        Text("是")
+                        Text(L("是", "Yes"))
                             .font(.system(size: 14))
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
@@ -1331,55 +1337,80 @@ struct MatchDatePickerRowView: View {
         ZStack(alignment: .topTrailing) {
             VStack(alignment: .center, spacing: 6) {
                 if isExpanded {
-                    Text("预计出行时间：")
+                    Text(L("预计出行时间：", "Expected travel date:"))
                         .font(.system(size: 12))
                         .foregroundColor(.tripTextBrown.opacity(0.7))
 
                     HStack(spacing: 4) {
-                        // 起始：[月] 月 [日] 日
-                        numberMenu(
-                            value: hasStartSelection ? Calendar.current.component(.month, from: startDate) : nil,
-                            range: 1...12,
-                            onSelect: { setStart(month: $0) }
-                        )
-                        Text("月")
-                            .font(.system(size: 12))
-                            .foregroundColor(.tripTextBrown)
-                        numberMenu(
-                            value: hasStartSelection ? Calendar.current.component(.day, from: startDate) : nil,
-                            range: 1...31,
-                            onSelect: { setStart(day: $0) }
-                        )
-                        Text("日")
-                            .font(.system(size: 12))
-                            .foregroundColor(.tripTextBrown)
+                        let lang = UserDefaults.standard.string(forKey: "app_language") ?? "zh"
+                        if lang == "en" {
+                            // English: Oct 22 - Oct 30
+                            monthMenu(
+                                value: hasStartSelection ? Calendar.current.component(.month, from: startDate) : nil,
+                                onSelect: { setStart(month: $0) }
+                            )
+                            numberMenu(
+                                value: hasStartSelection ? Calendar.current.component(.day, from: startDate) : nil,
+                                range: 1...31,
+                                onSelect: { setStart(day: $0) }
+                            )
+                            Text("-")
+                                .font(.system(size: 12))
+                                .foregroundColor(.tripTextBrown.opacity(0.5))
+                            monthMenu(
+                                value: hasEndSelection ? Calendar.current.component(.month, from: endDate) : nil,
+                                onSelect: { setEnd(month: $0) }
+                            )
+                            numberMenu(
+                                value: hasEndSelection ? Calendar.current.component(.day, from: endDate) : nil,
+                                range: 1...31,
+                                onSelect: { setEnd(day: $0) }
+                            )
+                        } else {
+                            // 中文：10 月 22 日 到 10 月 30 日
+                            numberMenu(
+                                value: hasStartSelection ? Calendar.current.component(.month, from: startDate) : nil,
+                                range: 1...12,
+                                onSelect: { setStart(month: $0) }
+                            )
+                            Text("月")
+                                .font(.system(size: 12))
+                                .foregroundColor(.tripTextBrown)
+                            numberMenu(
+                                value: hasStartSelection ? Calendar.current.component(.day, from: startDate) : nil,
+                                range: 1...31,
+                                onSelect: { setStart(day: $0) }
+                            )
+                            Text("日")
+                                .font(.system(size: 12))
+                                .foregroundColor(.tripTextBrown)
 
-                        Text("到")
-                            .font(.system(size: 12))
-                            .foregroundColor(.tripTextBrown.opacity(0.5))
+                            Text("到")
+                                .font(.system(size: 12))
+                                .foregroundColor(.tripTextBrown.opacity(0.5))
 
-                        // 结束：[月] 月 [日] 日
-                        numberMenu(
-                            value: hasEndSelection ? Calendar.current.component(.month, from: endDate) : nil,
-                            range: 1...12,
-                            onSelect: { setEnd(month: $0) }
-                        )
-                        Text("月")
-                            .font(.system(size: 12))
-                            .foregroundColor(.tripTextBrown)
-                        numberMenu(
-                            value: hasEndSelection ? Calendar.current.component(.day, from: endDate) : nil,
-                            range: 1...31,
-                            onSelect: { setEnd(day: $0) }
-                        )
-                        Text("日")
-                            .font(.system(size: 12))
-                            .foregroundColor(.tripTextBrown)
+                            numberMenu(
+                                value: hasEndSelection ? Calendar.current.component(.month, from: endDate) : nil,
+                                range: 1...12,
+                                onSelect: { setEnd(month: $0) }
+                            )
+                            Text("月")
+                                .font(.system(size: 12))
+                                .foregroundColor(.tripTextBrown)
+                            numberMenu(
+                                value: hasEndSelection ? Calendar.current.component(.day, from: endDate) : nil,
+                                range: 1...31,
+                                onSelect: { setEnd(day: $0) }
+                            )
+                            Text("日")
+                                .font(.system(size: 12))
+                                .foregroundColor(.tripTextBrown)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 } else {
                     HStack(spacing: 4) {
-                        Text("预计出行时间:")
+                        Text(L("预计出行时间:", "Expected travel date:"))
                             .font(.system(size: 12))
                             .foregroundColor(.tripTextBrown.opacity(0.7))
                         Text("flexible")
@@ -1396,7 +1427,7 @@ struct MatchDatePickerRowView: View {
             .background(Color.tripPostItWhite)
             .cornerRadius(4)
             .frame(width: 240, alignment: .leading)
-            .onChange(of: isExpanded) { expanded in
+            .onChange(of: isExpanded) { _, expanded in
                 // 关闭再展开时重置回 "--" 状态
                 if !expanded {
                     hasStartSelection = false
@@ -1425,6 +1456,26 @@ struct MatchDatePickerRowView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.tripTextBrown)
                 .frame(width: 28, height: 22)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.gray.opacity(0.1))
+                )
+        }
+    }
+
+    private static let monthAbbreviations = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    private func monthMenu(value: Int?, onSelect: @escaping (Int) -> Void) -> some View {
+        Menu {
+            ForEach(1...12, id: \.self) { n in
+                Button(Self.monthAbbreviations[n - 1]) { onSelect(n) }
+            }
+        } label: {
+            Text(value.map { Self.monthAbbreviations[$0 - 1] } ?? "--")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.tripTextBrown)
+                .frame(width: 34, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.gray.opacity(0.1))

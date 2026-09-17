@@ -141,8 +141,8 @@ struct SportsView: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
-                        Text("关注体育赛事")
-                            .font(.system(size: 30, weight: .bold))
+                        Text(L("关注体育赛事", "Favorite Events"))
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.25), radius: 4, x: 1, y: 2)
                     }
@@ -154,8 +154,8 @@ struct SportsView: View {
                     ZStack {
                         Color(red: 0.10, green: 0.18, blue: 0.45)
                         SportClockSweep()
-                        Text("我的运动计划")
-                            .font(.system(size: 30, weight: .bold))
+                        Text(L("我的运动计划", "My Sports Plans"))
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.5), radius: 6, x: 1, y: 2)
                     }
@@ -221,14 +221,20 @@ struct EventsView: View {
     @State private var isHeartClicked: Bool = false   // 右上角心形点击后的红色状态
 
     private let scoreMatchSports: Set<String> = [
+        // 中文
         "游泳", "跳水", "田径", "体操", "花样游泳", "射击",
         "射箭", "举重", "高尔夫", "自行车", "花样滑冰", "滑雪",
-        "短道速滑", "攀岩", "滑板", "马拉松", "钓鱼"
+        "短道速滑", "攀岩", "滑板", "马拉松", "钓鱼",
+        // English (case-insensitive — 见 isScoreMatch)
+        "swimming", "diving", "athletics", "gymnastics", "synchronized swimming",
+        "shooting", "archery", "weightlifting", "golf", "cycling",
+        "figure skating", "skiing", "short track speed skating",
+        "climbing", "skateboarding", "marathon", "fishing"
     ]
 
     private var isScoreMatch: Bool {
         guard let sport = selectedSport else { return false }
-        return scoreMatchSports.contains(sport)
+        return scoreMatchSports.contains(sport.lowercased())
     }
 
     var body: some View {
@@ -264,11 +270,11 @@ struct EventsView: View {
 
                     if selectedSport == nil {
                         HStack(spacing: 8) {
-                            Text("关注最近")
-                                .font(.system(size: 28, weight: .bold))
+                            Text(L("关注最近", "Upcoming"))
+                                .font(.system(size: 26, weight: .bold))
                                 .foregroundColor(.eventsTextDark)
 
-                            TextField("运动名称", text: $sportInput)
+                            TextField(L("运动名称", "Sport Name"), text: $sportInput)
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.eventsSportOrange)
                                 .multilineTextAlignment(.center)
@@ -288,8 +294,8 @@ struct EventsView: View {
                                     }
                                 }
 
-                            Text("赛事")
-                                .font(.system(size: 28, weight: .bold))
+                            Text(L("赛事", "Match"))
+                                .font(.system(size: 26, weight: .bold))
                                 .foregroundColor(.eventsTextDark)
                         }
                     }
@@ -326,7 +332,7 @@ struct EventsView: View {
                         .foregroundColor(.eventsSportBlue)
                 }
                 Spacer()
-                Text("添加我关注的\(selectedSport ?? "")赛事")
+                Text(L("添加我关注的\(selectedSport ?? "")赛事", "Add \(selectedSport ?? "") Events I Follow"))
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.eventsTextDark)
                 Spacer()
@@ -348,7 +354,7 @@ struct EventsView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         HStack(spacing: 2) {
-                            Text("比赛名称")
+                            Text(L("比赛名称", "Match Name"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.eventsTextDark)
                             Text("*")
@@ -356,7 +362,7 @@ struct EventsView: View {
                                 .foregroundColor(.eventsSportRed)
                         }
                         .frame(width: 80, alignment: .leading)
-                        TextField("例：2024奥运会决赛", text: $matchName)
+                        TextField(L("例：2024奥运会决赛", "e.g. 2024 Olympic Final"), text: $matchName)
                             .font(.system(size: 15))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
@@ -366,7 +372,7 @@ struct EventsView: View {
 
                     HStack {
                         HStack(spacing: 2) {
-                            Text("比赛时间")
+                            Text(L("比赛时间", "Match Time"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.eventsTextDark)
                             Text("*")
@@ -374,7 +380,7 @@ struct EventsView: View {
                                 .foregroundColor(.eventsSportRed)
                         }
                         .frame(width: 80, alignment: .leading)
-                        TextField("例：7月25日 19:30", text: $matchTime)
+                        TextField(L("例：7月25日 19:30", "e.g. Jul 25 19:30"), text: $matchTime)
                             .font(.system(size: 15))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
@@ -385,7 +391,7 @@ struct EventsView: View {
                     if isScoreMatch {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 2) {
-                                Text("我支持的选手")
+                                Text(L("我支持的选手", "Supported Player"))
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.eventsTextDark)
                                 Text("*")
@@ -393,7 +399,7 @@ struct EventsView: View {
                                     .foregroundColor(.eventsSportRed)
                             }
 
-                            TextField("选手姓名", text: $supportedPlayer)
+                            TextField(L("选手姓名", "Player Name"), text: $supportedPlayer)
                                 .font(.system(size: 15))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
@@ -413,7 +419,7 @@ struct EventsView: View {
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 2) {
-                                Text("比赛双方")
+                                Text(L("比赛双方", "Teams"))
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.eventsTextDark)
                                 Text("*")
@@ -422,14 +428,14 @@ struct EventsView: View {
                             }
 
                             HStack(spacing: 10) {
-                                eventsTeamField(text: $team1, placeholder: "队伍1", hasHeart: heartOnTeam == 1)
+                                eventsTeamField(text: $team1, placeholder: L("队伍1", "Team 1"), hasHeart: heartOnTeam == 1)
                                     .frame(maxWidth: .infinity)
 
                                 Text("VS")
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.eventsSportOrange)
 
-                                eventsTeamField(text: $team2, placeholder: "队伍2", hasHeart: heartOnTeam == 2)
+                                eventsTeamField(text: $team2, placeholder: L("队伍2", "Team 2"), hasHeart: heartOnTeam == 2)
                                     .frame(maxWidth: .infinity)
                             }
 
@@ -438,13 +444,13 @@ struct EventsView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("备注")
+                        Text(L("备注", "Notes"))
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.eventsTextDark)
 
                         ZStack(alignment: .topLeading) {
                             if freeText.isEmpty {
-                                Text("想记录的内容...")
+                                Text(L("想记录的内容...", "Notes to record..."))
                                     .font(.system(size: 14))
                                     .foregroundColor(.gray.opacity(0.6))
                                     .padding(.top, 10)
@@ -545,7 +551,7 @@ struct EventsView: View {
                     HStack(spacing: 4) {
                         EventsSketchHeart()
                             .frame(width: 16, height: 16)
-                        Text("队伍1")
+                        Text(L("队伍1", "Team 1"))
                             .font(.system(size: 12))
                     }
                     .foregroundColor(heartOnTeam == 1 ? .eventsSketchRed : .gray)
@@ -580,7 +586,7 @@ struct EventsView: View {
                     HStack(spacing: 4) {
                         EventsSketchHeart()
                             .frame(width: 16, height: 16)
-                        Text("队伍2")
+                        Text(L("队伍2", "Team 2"))
                             .font(.system(size: 12))
                     }
                     .foregroundColor(heartOnTeam == 2 ? .eventsSketchRed : .gray)
@@ -593,7 +599,7 @@ struct EventsView: View {
                 }
             }
 
-            Text(heartOnTeam.map { "爱心已贴在队伍\($0)，点击爱心可切换" } ?? "给你喜欢的队伍贴上爱心")
+            Text(heartOnTeam.map { "爱心已贴在队伍\($0)，点击爱心可切换" } ?? L("给你喜欢的队伍贴上爱心", "Put a heart sticker on the team you support"))
                 .font(.system(size: 12))
                 .foregroundColor(.gray)
         }
@@ -709,7 +715,7 @@ struct EventsResultPage: View {
                 HStack {
                     Color.clear.frame(width: 60, height: 20)
                     Spacer()
-                    Text("我关注的赛事")
+                    Text(L("我关注的赛事", "My Followed Match"))
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.eventsTextDark)
                     Spacer()
@@ -750,32 +756,44 @@ struct EventsResultPage: View {
                 .buttonStyle(.plain)
             }
 
-            if !entry.matchName.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("比赛名称")
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
-                    Text(entry.matchName)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.eventsTextDark)
-                }
-            }
-
-            if !entry.matchTime.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("比赛时间")
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
-                    Text(entry.matchTime)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.eventsTextDark)
+            if !entry.matchName.isEmpty || !entry.matchTime.isEmpty {
+                HStack(alignment: .top, spacing: 24) {
+                    if !entry.matchName.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L("比赛名称", "Match Name"))
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                            Text(entry.matchName)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.eventsTextDark)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                    }
+                    if !entry.matchTime.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L("比赛时间", "Match Time"))
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                            Text(entry.matchTime)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.eventsTextDark)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                    }
+                    Spacer(minLength: 0)
                 }
             }
 
             if entry.isScoreMatch {
                 if !entry.team1.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("我支持的选手")
+                        Text(L("我支持的选手", "Supported Player"))
                             .font(.system(size: 13))
                             .foregroundColor(.gray)
 
@@ -803,7 +821,7 @@ struct EventsResultPage: View {
             } else {
                 if !entry.team1.isEmpty || !entry.team2.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("比赛双方")
+                        Text(L("比赛双方", "Teams"))
                             .font(.system(size: 13))
                             .foregroundColor(.gray)
 
@@ -862,7 +880,7 @@ struct EventsResultPage: View {
 
             if !entry.freeText.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("备注")
+                    Text(L("备注", "Notes"))
                         .font(.system(size: 13))
                         .foregroundColor(.gray)
                     Text(entry.freeText)
@@ -914,7 +932,9 @@ enum PlanPageState {
 struct SportLevelBar: View {
     let diaryCount: Int
 
-    private let sectionTitles = ["基础", "初级", "中级", "高级"]
+    private var sectionTitles: [String] {
+        [L("基础", "Basic"), L("初级", "Beginner"), L("中级", "Intermediate"), L("高级", "Advanced")]
+    }
 
     private enum LevelColors {
         static let lightBlue = Color(red: 173/255, green: 216/255, blue: 230/255)
@@ -1012,6 +1032,45 @@ struct SportPlansView: View {
         "棒球", "蛙泳", "蝶泳", "仰泳", "自由泳", "抱石", "单板", "冲浪", "徒步", "爬山", "芭蕾", "跳操"
     ]
 
+    /// 英文运动关键词 → 中文存储名（大小写不敏感匹配，按长度降序优先匹配长词）
+    private let englishSportKeywords: [(en: String, zh: String)] = [
+        ("table tennis", "乒乓球"), ("ping pong", "乒乓球"),
+        ("brisk walking", "快走"), ("strength training", "力量训练"),
+        ("weight training", "重训"), ("mountain climbing", "爬山"),
+        ("butterfly stroke", "蝶泳"), ("rock climbing", "攀岩"),
+        ("ice skating", "滑冰"), ("skateboarding", "滑板"),
+        ("snowboarding", "单板"), ("breaststroke", "蛙泳"),
+        ("pickleball", "匹克球"), ("badminton", "羽毛球"),
+        ("basketball", "篮球"), ("volleyball", "排球"),
+        ("baseball", "棒球"), ("football", "足球"),
+        ("swimming", "游泳"), ("running", "跑步"),
+        ("tennis", "网球"), ("squash", "壁球"),
+        ("cycling", "骑行"), ("skiing", "滑雪"),
+        ("bouldering", "抱石"), ("surfing", "冲浪"),
+        ("hiking", "徒步"), ("marathon", "马拉松"),
+        ("backstroke", "仰泳"), ("freestyle", "自由泳"),
+        ("pilates", "普拉提"), ("aerobics", "跳操"),
+        ("ballet", "芭蕾"), ("yoga", "瑜伽")
+    ]
+
+    /// 从用户输入文本中检测运动项目
+    /// - 英文输入（如 "swimming"）→ 返回首字母大写英文（如 "Swimming"）
+    /// - 中文输入（如 "蛙泳"）→ 返回中文（如 "蛙泳"）
+    /// - 未命中 → "自定义运动"
+    /// 秉持不对用户输入做翻译的原则：运动名按用户输入的语言存储，显示时只翻译后缀
+    private func detectSport(in text: String) -> String {
+        let lower = text.lowercased()
+        for (en, _) in englishSportKeywords {
+            if lower.contains(en) {
+                return en.capitalized
+            }
+        }
+        for kw in sportsKeywords {
+            if text.contains(kw) { return kw }
+        }
+        return "自定义运动"
+    }
+
     private var savedPlansKey: String {
         let prefix = userId.isEmpty ? "" : "\(userId)_"
         return "\(prefix)sports_savedPlansJSON"
@@ -1097,7 +1156,7 @@ struct SportPlansView: View {
                     .frame(height: 1)
                     .frame(maxWidth: 60)
 
-                Text(quickRows.allSatisfy { !$0.confirmed } ? "添加运动计划" : "添加新计划")
+                Text(quickRows.allSatisfy { !$0.confirmed } ? L("添加运动计划", "Add a Sport Plan") : L("添加新计划", "Add a New Plan"))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.5))
                     .lineLimit(1)
@@ -1184,7 +1243,7 @@ struct SportPlansView: View {
             } else if row.showInput {
                 // 编辑中：输入框 + 确定按钮
                 HStack(alignment: .top, spacing: 8) {
-                    TextField("输入运动计划...", text: Binding(
+                    TextField(L("输入运动计划...", "Enter sports plan..."), text: Binding(
                         get: { quickRows[idx].inputText },
                         set: { quickRows[idx].inputText = $0 }
                     ), axis: .vertical)
@@ -1206,7 +1265,7 @@ struct SportPlansView: View {
                     )
 
                     Button(action: { confirmQuickRow(id: row.id) }) {
-                        Text("确定")
+                        Text(L("确定", "Confirm"))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(red: 246/255, green: 241/255, blue: 235/255))
                             .padding(.horizontal, 16)
@@ -1339,7 +1398,7 @@ struct SportPlansView: View {
     }
 
     private func saveQuickPlan(text: String) {
-        let sport = sportsKeywords.first { text.contains($0) } ?? "自定义运动"
+        let sport = detectSport(in: text)
         savePlan(text: text, sport: sport)
     }
 
@@ -1352,7 +1411,6 @@ struct SportPlansView: View {
         guard let index = quickRows.firstIndex(where: { $0.id == id }) else { return }
         let text = quickRows[index].inputText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
-        let sport = sportsKeywords.first { text.contains($0) } ?? "自定义运动"
         saveQuickPlan(text: text)
 
         // 同步 quickRows 与已保存的计划（含 planId），并在末尾追加新的 idle 行
@@ -1503,7 +1561,9 @@ struct PlanDiaryPage: View {
             VStack(spacing: 16) {
                 HStack {
                     Spacer()
-                    Text(sport.isEmpty || sport == "自定义运动" ? "自定义运动笔记" : "\(sport)运动笔记")
+                    Text(sport.isEmpty || sport == "自定义运动"
+                        ? L("自定义运动笔记", "Custom Sport Notes")
+                        : L("\(sport)运动笔记", "\(sport) Notes"))
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(Color(red: 0.1, green: 0.2, blue: 0.5))
                     Spacer()
@@ -1514,7 +1574,7 @@ struct PlanDiaryPage: View {
                 let titleBottom: CGFloat = 80 + 28 + 16
                 let gridH = max(0, geo.size.height / 4 - titleBottom)
                 let gridSpacing: CGFloat = 8
-                let placeholders = ["添加我的\n热身流程", "添加我的\n练习日常", "添加我的\n整理放松"]
+                let placeholders = [L("添加我的\n热身流程", "Add My\nWarm-up"), L("添加我的\n练习日常", "Add My\nTraining Routine"), L("添加我的\n整理放松", "Add My\nCool-down")]
 
                 HStack(spacing: gridSpacing) {
                     ForEach(0..<3, id: \.self) { i in
@@ -1554,7 +1614,7 @@ struct PlanDiaryPage: View {
                         ForEach(entries) { entry in
                             HStack(alignment: .top, spacing: 14) {
                                 VStack(spacing: 2) {
-                                    Text(entry.date)
+                                    Text(D(entry.date))
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(Color(red: 0.4, green: 0.3, blue: 0.1))
                                 }
@@ -1683,7 +1743,7 @@ struct PlanDiaryPage: View {
 
             HStack(spacing: 10) {
                 // 白色输入框（通栏中间位置；左右预留 提交按钮 / 平衡对称）
-                TextField(milestoneReached ? "该计划已完成里程碑" : (overDailyLimit ? "今日已达最多2条记录" : "记录今天的运动"),
+                TextField(milestoneReached ? L("该计划已完成里程碑", "Milestone reached for this plan") : (overDailyLimit ? L("今日已达最多2条记录", "Daily limit of 2 entries reached") : L("记录今天的运动", "Today's training notes")),
                           text: $diaryInput, axis: .vertical)
                     .font(.system(size: 16))
                     .lineLimit(1...6)
@@ -1705,7 +1765,7 @@ struct PlanDiaryPage: View {
                     )
 
                 Button(action: submitDiary) {
-                    Text("提交")
+                    Text(L("提交", "Submit"))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.white)
                         .frame(width: 60)
@@ -1721,8 +1781,10 @@ struct PlanDiaryPage: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
+        // 键盘显示时移除安全区 padding，让输入框紧贴键盘顶部；隐藏时保留 padding 让内容避开 home indicator
+        .padding(.bottom, keyboard.height > 0 ? 0 : UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0)
+        // background 在 padding 之外，覆盖 VStack + padding，奶油色延伸到屏幕底部
         .background(Color(red: 247/255, green: 243/255, blue: 233/255))
-        .padding(.bottom, UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0)
     }
 
     private func submitDiary() {

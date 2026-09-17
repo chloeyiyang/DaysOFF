@@ -34,18 +34,22 @@ struct CrystalView: View {
         case manual, timed
     }
 
-    private let manualGuidelines = [
-        "首先让思绪安静下来",
-        "拖动音叉敲击水晶，让声音充满空间",
-        "吸纳空间中的能量",
-        "享受此刻的安静沉思"
-    ]
-    private let timedGuidelines = [
-        "躺下或坐着，保持舒服的姿势",
-        "将注意力集中在自己的身体和感觉",
-        "闭上双眼，缓慢呼吸",
-        "三分钟后，由水晶音叉将您唤醒"
-    ]
+    private var manualGuidelines: [String] {
+        [
+            L("首先让思绪安静下来", "First take a moment to quiet your thoughts"),
+            L("拖动音叉敲击水晶，让声音充满空间", "Strike the tuning fork against the crystal and let its sound fill the space"),
+            L("吸纳空间中的能量", "Take in the energy of the room"),
+            L("享受此刻的安静沉思", "Savor the moment of quiet contemplation")
+        ]
+    }
+    private var timedGuidelines: [String] {
+        [
+            L("躺下或坐着，保持舒服的姿势", "Lie down or sit in a comfortable position"),
+            L("将注意力集中在自己的身体和感觉", "Focus on your own body and mind"),
+            L("闭上双眼，缓慢呼吸", "Close your eyes and breathe slowly"),
+            L("三分钟后，由水晶音叉将您唤醒", "The tuning fork will strike the crystal in three minutes to wake you up")
+        ]
+    }
 
     // 点击定时后开始计时：沙子三分钟流完，随后播放 4096Hz 音叉声唤醒
     private func startTimedSession() {
@@ -110,18 +114,18 @@ struct CrystalView: View {
                     Spacer()
                         .frame(height: 49)
 
-                    Text("净化水晶")
+                    Text(L("净化水晶", "Tuning Fork"))
                         .font(.custom("PingFang SC", size: 28, relativeTo: .title2).weight(.semibold))
                         .foregroundColor(Color(red: 0.40, green: 0.52, blue: 0.68))
                         // 手动 / 定时按钮（竖排）：手动上边与标题上边对齐，按钮中线与沙漏中线（屏幕中心 +115）对齐
                         .overlay(alignment: .top) {
                             VStack(spacing: 6) {
-                                modeCircleButton(title: "手动", isSelected: purifyMode == .manual) {
+                                modeCircleButton(title: L("手动", "Hand"), isSelected: purifyMode == .manual) {
                                     purifyMode = .manual
                                     stopTimedSession()
                                     sandProgress = 0
                                 }
-                                modeCircleButton(title: "定时", isSelected: purifyMode == .timed) {
+                                modeCircleButton(title: L("定时", "Timer"), isSelected: purifyMode == .timed) {
                                     purifyMode = .timed
                                     startTimedSession()
                                 }
@@ -145,7 +149,7 @@ struct CrystalView: View {
 
                 // 副标题 + 引导文案：垂直居中于标题底边与水晶柱尖端之间
                 VStack(spacing: 16) {
-                    Text("～ 4096赫兹 ～")
+                    Text(L("～ 4096赫兹 ～", "～ 4096Hz ～"))
                         .font(.custom("PingFang SC", size: 16))
                         .foregroundColor(Color(red: 0.48, green: 0.58, blue: 0.72).opacity(0.85))
                     VStack(spacing: 6) {

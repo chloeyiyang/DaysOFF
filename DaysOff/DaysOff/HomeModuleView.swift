@@ -181,13 +181,22 @@ struct PaperView: View {
     var textOpacity: Double = 0.9
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 3)
+        let displayed = M(text).lowercased()
+        let isEnglish = displayed.unicodeScalars.contains { (65...122).contains($0.value) }
+        // 英文按字符数分级，并按传入 fontSize 等比缩放（网格16pt→15/12，顶部24pt→22/18）
+        let resolvedFontSize: CGFloat = isEnglish
+            ? (displayed.count < 8 ? 15 : 12) * (fontSize / 16)
+            : fontSize
+
+        return RoundedRectangle(cornerRadius: 3)
             .fill(Color.white.opacity(opacity))
             .frame(width: size, height: size)
             .overlay(
-                Text(text)
-                    .font(.system(size: fontSize, weight: .medium))
+                Text(displayed)
+                    .font(.system(size: resolvedFontSize, weight: .medium))
                     .foregroundColor(Color(red: 80/255, green: 70/255, blue: 60/255).opacity(textOpacity))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             )
             .shadow(color: Color.black.opacity(0.10), radius: 2, x: 0, y: 1)
     }
@@ -262,11 +271,12 @@ struct DraggablePaperView: View {
     let text: String
     let onTap: () -> Void
     let onDragToTop: () -> Void
+    var scale: CGFloat = 1.0
 
     @GestureState private var dragTranslation: CGSize = .zero
 
     var body: some View {
-        PaperView(text: text, size: 44, fontSize: 16)
+        PaperView(text: text, size: 44 * scale, fontSize: 16 * scale)
             .offset(dragTranslation)
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("grid"))
@@ -659,18 +669,36 @@ struct SilverGrid: View {
     // Gap below gem square so that when swung 45°, the lowest point to text = row spacing
     private var gemLabelSpacing: CGFloat {
         let extensionBelow = squareSize / 2 * (sqrt(2) - 1)
-        return spacing + extensionBelow
+        return spacing + extensionBelow + 6 * (squareSize / 32.0)
     }
 
     // MARK: - Vertical label (shown below gem squares when swinging)
 
     @ViewBuilder
     private func verticalLabel(_ text: String, isLocked: Bool) -> some View {
-        VStack(spacing: 1) {
-            ForEach(Array(text), id: \.self) { ch in
-                Text(String(ch))
-                    .font(.system(size: 16, weight: .medium))
+        // 英文（ASCII 字母）整体旋转 -90°，从下往上读，单词完整且宽度仅为字体高度
+        let isEnglish = text.unicodeScalars.allSatisfy {
+            (65...90).contains($0.value) || (97...122).contains($0.value) || $0.value == 32
+        }
+
+        let scale = squareSize / 32.0
+
+        Group {
+            if isEnglish {
+                Text(text)
+                    .font(.system(size: 16 * scale, weight: .medium))
                     .foregroundColor(Color(red: 90/255, green: 80/255, blue: 70/255))
+                    .fixedSize()
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 22 * scale, alignment: .center)
+            } else {
+                VStack(spacing: 1) {
+                    ForEach(Array(text), id: \.self) { ch in
+                        Text(String(ch))
+                            .font(.system(size: 16 * scale, weight: .medium))
+                            .foregroundColor(Color(red: 90/255, green: 80/255, blue: 70/255))
+                    }
+                }
             }
         }
         .opacity(isLocked ? 1.0 : 0.0)
@@ -680,15 +708,17 @@ struct SilverGrid: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .center, spacing: spacing) {
+        // 由父视图传入的 squareSize 已包含缩放，从中推出内部缩放系数（基准 32pt）
+        let scale = squareSize / 32.0
+        return VStack(alignment: .center, spacing: spacing) {
             // ── Tape frame above row 1 + pink heart sticker (negative mood) ──
             ZStack {
-                TapeFrameView(size: 72)
-                    .offset(y: -10)
+                TapeFrameView(size: 72 * scale)
+                    .offset(y: -10 * scale)
 
                 if let p = pinnedPaper {
-                    PaperView(text: p.text, size: 72, fontSize: 24, opacity: 0.45, textOpacity: 0.9)
-                        .offset(y: -10)  // 随胶带上移
+                    PaperView(text: p.text, size: 72 * scale, fontSize: 24 * scale, opacity: 0.45, textOpacity: 0.9)
+                        .offset(y: -10 * scale)  // 随胶带上移
                         .transition(.opacity.combined(with: .scale))
                         .onTapGesture {
                             withAnimation(.easeInOut(duration: 0.4)) {
@@ -700,19 +730,19 @@ struct SilverGrid: View {
 
                 // Pink heart sticker — appears 1s after a negative mood is pinned
                 if showPinkHeart, let p = pinnedPaper {
-                    PinkHeartSticker(size: 38, onTap: { onHeartTap(p.text) })
-                        .offset(x: 72, y: -8)  // 随胶带上移 10pt
+                    PinkHeartSticker(size: 38 * scale, onTap: { onHeartTap(p.text) })
+                        .offset(x: 72 * scale, y: -8 * scale)  // 随胶带上移 10pt
                         .transition(.asymmetric(
                             insertion: .scale(scale: 0.35, anchor: .leading)
                                 .combined(with: .opacity)
-                                .combined(with: .offset(x: -12, y: 0)),
+                                .combined(with: .offset(x: -12 * scale, y: 0)),
                             removal: .scale.animation(.easeInOut(duration: 0.25))
                                 .combined(with: .opacity)
                         ))
                         .animation(.easeOut(duration: 0.15), value: showPinkHeart)
                 }
             }
-            .frame(height: 72)
+            .frame(height: 72 * scale)
 
             // ── 4x4 silver grid — all squares interactive ──
             VStack(spacing: spacing) {
@@ -733,7 +763,8 @@ struct SilverGrid: View {
                                         DraggablePaperView(
                                             text: paper.text,
                                             onTap: { dismissPaper(paper) },
-                                            onDragToTop: { pinPaper(paper) }
+                                            onDragToTop: { pinPaper(paper) },
+                                            scale: scale
                                         )
                                         .transition(.scale.combined(with: .opacity))
                                     }
@@ -773,7 +804,7 @@ struct SilverGrid: View {
                     .allowsHitTesting(isLocked)
                     .opacity(isLocked ? 1.0 : 0.92)
 
-                    verticalLabel("手记", isLocked: isLocked)
+                    verticalLabel(L("手记", "Journal"), isLocked: isLocked)
                 }
 
                 VStack(spacing: gemLabelSpacing) {
@@ -796,7 +827,7 @@ struct SilverGrid: View {
                     .allowsHitTesting(isLocked)
                     .opacity(isLocked ? 1.0 : 0.92)
 
-                    verticalLabel("旅行", isLocked: isLocked)
+                    verticalLabel(L("旅行", "Travel"), isLocked: isLocked)
                 }
 
                 VStack(spacing: gemLabelSpacing) {
@@ -819,7 +850,7 @@ struct SilverGrid: View {
                     .allowsHitTesting(isLocked)
                     .opacity(isLocked ? 1.0 : 0.92)
 
-                    verticalLabel("创作", isLocked: isLocked)
+                    verticalLabel(L("创作", "Create"), isLocked: isLocked)
                 }
 
                 VStack(spacing: gemLabelSpacing) {
@@ -842,7 +873,7 @@ struct SilverGrid: View {
                     .allowsHitTesting(isLocked)
                     .opacity(isLocked ? 1.0 : 0.92)
 
-                    verticalLabel("运动", isLocked: isLocked)
+                    verticalLabel(L("运动", "Sports"), isLocked: isLocked)
                 }
             }
         }
@@ -864,33 +895,39 @@ struct HomeModuleView: View {
     @State private var pinnedPaper: PaperOnSquare? = nil
 
     var body: some View {
-        ZStack {
-            Color.cloudDancer
-                .ignoresSafeArea()
+        GeometryReader { geo in
+            // 以 iPhone 15 (393pt 宽) 为基准，按屏幕宽度等比缩放；上限 1.15 防止过度放大
+            let scale = min(geo.size.width / 393.0, 1.15)
 
-            // "Days OFF" title at the very top — elegant serif
-            VStack {
-                Text("Days OFF")
-                    .font(.system(size: 52, weight: .light, design: .serif))
-                    .foregroundColor(Color(red: 90/255, green: 80/255, blue: 70/255))
-                    .padding(.top, 40)
+            ZStack {
+                Color.cloudDancer
+                    .ignoresSafeArea()
 
-                Spacer()
+                // "Days OFF" title at the very top — elegant serif
+                VStack {
+                    Text("Days OFF")
+                        .font(.system(size: 52 * scale, weight: .light, design: .serif))
+                        .foregroundColor(Color(red: 90/255, green: 80/255, blue: 70/255))
+                        .padding(.top, 40 * scale)
+
+                    Spacer()
+                }
+
+                SilverGrid(
+                    squareSize: 32 * scale,
+                    spacing: 24 * scale,
+                    onLavenderTap: onLavender,
+                    onIcecreamTap: onIcecream,
+                    onBurgundyTap: onBurgundy,
+                    onOceanBlueTap: onOceanBlue,
+                    onHeartTap: onNegativeMood,
+                    pinnedPaper: $pinnedPaper,
+                    moodTexts: moodTexts
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .offset(y: 30 * scale)
             }
-
-            SilverGrid(
-                squareSize: 32,
-                spacing: 24,
-                onLavenderTap: onLavender,
-                onIcecreamTap: onIcecream,
-                onBurgundyTap: onBurgundy,
-                onOceanBlueTap: onOceanBlue,
-                onHeartTap: onNegativeMood,
-                pinnedPaper: $pinnedPaper,
-                moodTexts: moodTexts
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .offset(y: 30)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }

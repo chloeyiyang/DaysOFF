@@ -92,7 +92,7 @@ struct BrainDeclutterView: View {
                             Image(systemName: "note.text")
                                 .font(.title2)
                                 .foregroundColor(dreamyPurple)
-                            Text("大脑断舍离")
+                            Text(L("大脑断舍离", "Brain Dump"))
                                 .font(.headline)
                                 .foregroundColor(dreamyPurple)
                         }
@@ -138,10 +138,10 @@ struct BrainDeclutterView: View {
                             }
                         }
                         .animation(.easeInOut(duration: 0.3), value: isRecording)
-                        .alert("麦克风语音输入", isPresented: $showMicHintAlert) {
-                            Button("知道了", role: .cancel) {}
+                        .alert(L("麦克风语音输入", "Voice Input"), isPresented: $showMicHintAlert) {
+                            Button(L("知道了", "Got It"), role: .cancel) {}
                         } message: {
-                            Text("打开麦克风语音输入您的心情手记，便于您快速记录。再次点击关闭语音输入。")
+                            Text(L("打开麦克风语音输入您的心情手记，便于您快速记录。再次点击关闭语音输入。", "Turn on the microphone to voice input your mood journal for quick recording. Tap again to turn off."))
                         }
 
                         Spacer()
@@ -151,7 +151,7 @@ struct BrainDeclutterView: View {
                     ZStack(alignment: .topLeading) {
                         // 占位提示
                         if answer.isEmpty {
-                            Text("写下你想释放的「\(feeling)」想法，写完把它们通通丢掉...")
+                            Text(L("写下你想释放的「\(feeling)」想法，写完把它们通通丢掉...", "Write down your \"\(M(feeling))\" thoughts, then toss them all away..."))
                                 .font(.system(size: 20))
                                 .foregroundColor(.gray.opacity(0.5))
                                 .padding(.top, 8)
@@ -454,12 +454,12 @@ struct FeelingResultView: View {
                         .frame(height: 60)
 
                     VStack(spacing: 14) {
-                        Text("给自己一分钟时间")
+                        Text(L("给自己一分钟时间", "Take A Moment For Yourself"))
                             .font(.pingFang(size: 28, weight: .bold))
                             .multilineTextAlignment(.center)
                             .foregroundColor(sandBrown)
 
-                        Text("共振呼吸练习")
+                        Text(L("共振呼吸练习", "Resonant Breathing"))
                             .font(.pingFang(size: 16))
                             .foregroundColor(sandBrown.opacity(0.8))
                     }
@@ -470,16 +470,16 @@ struct FeelingResultView: View {
                         .frame(height: 16)
 
                     VStack(spacing: 6) {
-                        Text("吸气5.5秒")
+                        Text(L("吸气5.5秒", "Inhale 5.5s"))
                             .font(.pingFang(size: 15))
                             .foregroundColor(sandBrown.opacity(0.75))
-                        Text("吐气5.5秒")
+                        Text(L("吐气5.5秒", "Exhale 5.5s"))
                             .font(.pingFang(size: 15))
                             .foregroundColor(sandBrown.opacity(0.75))
-                        Text("一分钟总共呼吸5.5次")
+                        Text(L("一分钟总共呼吸5.5次", "5.5 breaths per minute"))
                             .font(.pingFang(size: 15))
                             .foregroundColor(sandBrown.opacity(0.75))
-                        Text("练习完美呼吸节奏")
+                        Text(L("练习完美呼吸节奏", "Practice perfect breathing rhythm"))
                             .font(.pingFang(size: 15))
                             .foregroundColor(sandBrown.opacity(0.75))
                     }
@@ -508,7 +508,7 @@ struct FeelingResultView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if showContinue {
-                        Button("继续") {
+                        Button(L("继续", "Continue")) {
                             onContinue()
                         }
                         .font(.pingFang(size: 16, weight: .medium))
@@ -714,7 +714,7 @@ struct HappyView: View {
                         Image(systemName: "note.text")
                             .font(.title2)
                             .foregroundColor(dreamyPurple)
-                        Text("心情")
+                        Text(L("心情", "Mood"))
                             .font(.headline)
                             .foregroundColor(dreamyPurple)
                     }
@@ -761,10 +761,10 @@ struct HappyView: View {
                         }
                     }
                     .animation(.easeInOut(duration: 0.3), value: isRecording)
-                    .alert("麦克风语音输入", isPresented: $showMicHintAlert) {
-                        Button("知道了", role: .cancel) {}
+                    .alert(L("麦克风语音输入", "Voice Input"), isPresented: $showMicHintAlert) {
+                        Button(L("知道了", "Got It"), role: .cancel) {}
                     } message: {
-                        Text("打开麦克风语音输入您的心情手记，便于您快速记录。再次点击关闭语音输入。")
+                        Text(L("打开麦克风语音输入您的心情手记，便于您快速记录。再次点击关闭语音输入。", "Turn on the microphone to voice input your mood journal for quick recording. Tap again to turn off."))
                     }
 
                     Spacer()
@@ -772,7 +772,7 @@ struct HappyView: View {
 
                 ZStack(alignment: .topLeading) {
                     if answer1.isEmpty && !hasSubmitted1 && !isNegativeMood {
-                        Text("试着描述一下这种\(feeling)的感觉...")
+                        Text(L("试着描述一下这种\(feeling)的感觉...", "Try to describe this \(M(feeling)) feeling..."))
                             .foregroundColor(.gray.opacity(0.5))
                             .padding(.top, 8)
                             .padding(.leading, 4)
@@ -839,7 +839,7 @@ struct HappyView: View {
                                 Image(systemName: "note.text")
                                     .font(.title2)
                                     .foregroundColor(dreamyPurple)
-                                Text("心情")
+                                Text(L("心情", "Mood"))
                                     .font(.headline)
                                     .foregroundColor(dreamyPurple)
                             }
@@ -1049,7 +1049,7 @@ struct HappyView: View {
             
             if !hasSubmitted {
                 Button(action: onSubmit) {
-                    Text("完成")
+                    Text(L("完成", "Done"))
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)

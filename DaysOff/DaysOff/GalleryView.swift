@@ -433,12 +433,12 @@ struct GalleryHallScene: View {
                 
                 if canvasState == .ended {
                     VStack(spacing: 24) {
-                        Text("本次展览到此结束，感谢观看")
+                        Text(L("本次展览到此结束，感谢观看", "This exhibition has ended, thank you for visiting"))
                             .font(.pingFang(size: 20, weight: .medium))
                             .foregroundColor(Color.white.opacity(0.85))
-                        
+
                         Button(action: replay) {
-                            Text("我想再看一遍")
+                            Text(L("我想再看一遍", "Watch Again"))
                                 .font(.pingFang(size: 16))
                                 .foregroundColor(Color.white.opacity(0.8))
                                 .padding(.horizontal, 36)
@@ -459,7 +459,7 @@ struct GalleryHallScene: View {
                 VStack {
                     Spacer()
                     Button(action: onExit) {
-                        Text("退出")
+                        Text(L("退出", "Exit"))
                             .font(.pingFang(size: 16))
                             .foregroundColor(Color.white.opacity(0.8))
                             .padding(.horizontal, 40)
@@ -874,11 +874,11 @@ struct GalleryContentView: View {
                                 .blur(radius: 20)
 
                                 VStack(spacing: 8) {
-                                    Text("准备我的画展")
+                                    Text(L("准备我的画展", "Prepare My Exhibition"))
                                         .font(.pingFang(size: 36, weight: .bold))
                                         .foregroundColor(Color(red: 0.45, green: 0.30, blue: 0.20))
 
-                                    Text("策展你的专属艺术空间")
+                                    Text(L("策展你的专属艺术空间", "Curate your personal art space"))
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(Color(red: 0.45, green: 0.30, blue: 0.20).opacity(0.7))
                                 }
@@ -980,11 +980,11 @@ struct GalleryContentView: View {
                                         .position(x: geo.size.width * 0.08, y: geo.size.height * 0.78)
 
                                     VStack(spacing: 8) {
-                                        Text("参观当前展览")
+                                        Text(L("参观当前展览", "Visit Current Exhibition"))
                                             .font(.pingFang(size: 36, weight: .bold))
                                             .foregroundColor(.white)
 
-                                        Text("走进虚拟艺术展厅")
+                                        Text(L("走进虚拟艺术展厅", "Step into a virtual art gallery"))
                                             .font(.system(size: 14, weight: .medium))
                                             .foregroundColor(.white.opacity(0.7))
                                     }
@@ -1009,7 +1009,7 @@ struct GalleryContentView: View {
                         }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "chevron.left")
-                                Text("返回")
+                                Text(L("返回", "Back"))
                             }
                         }
                     }
@@ -1483,11 +1483,11 @@ struct PrepareExhibitionView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 16) {
                     VStack(spacing: 12) {
-                        Text("展览名称")
+                        Text(L("展览名称", "Exhibition Name"))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(red: 0.40, green: 0.35, blue: 0.30))
 
-                        TextField("输入展览名称...", text: $exhibitionName)
+                        TextField(L("输入展览名称...", "Enter exhibition name..."), text: $exhibitionName)
                             .font(.system(size: 20, weight: .medium))
                             .foregroundColor(Color(red: 0.30, green: 0.25, blue: 0.20))
                             .multilineTextAlignment(.center)
@@ -1506,13 +1506,13 @@ struct PrepareExhibitionView: View {
                     .padding(.horizontal, 20)
 
                     VStack(spacing: 12) {
-                        Text("展览介绍")
+                        Text(L("展览介绍", "Exhibition Intro"))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(red: 0.40, green: 0.35, blue: 0.30))
 
                         ZStack(alignment: .topLeading) {
                             if exhibitionIntro.isEmpty {
-                                Text("输入展览介绍...")
+                                Text(L("输入展览介绍...", "Enter exhibition intro..."))
                                 .font(.system(size: 14))
                                 .foregroundColor(Color(red: 0.50, green: 0.45, blue: 0.40).opacity(0.5))
                                 .padding(.top, 12)
@@ -1543,7 +1543,7 @@ struct PrepareExhibitionView: View {
                                 .font(.system(size: 50))
                                 .foregroundColor(Color(red: 0.55, green: 0.50, blue: 0.45).opacity(0.4))
 
-                            Text("请先在我的作品中选择10幅作品")
+                            Text(L("请先在我的作品中选择10幅作品", "Please select 10 artworks from My Works first"))
                                 .font(.system(size: 16))
                                 .foregroundColor(Color(red: 0.45, green: 0.40, blue: 0.35).opacity(0.7))
                         }
@@ -1561,13 +1561,13 @@ struct PrepareExhibitionView: View {
                                         .shadow(color: .black.opacity(0.2), radius: 4, x: 2, y: 2)
 
                                     VStack(alignment: .leading, spacing: 6) {
-                                        Text("作品 \(index + 1)")
+                                        Text(L("作品 \(index + 1)", "Artwork \(index + 1)"))
                                             .font(.system(size: 13, weight: .medium))
                                             .foregroundColor(Color(red: 0.40, green: 0.35, blue: 0.30))
 
                                         ZStack(alignment: .topLeading) {
                                             if introductions.indices.contains(index) && introductions[index].isEmpty {
-                                                Text("输入作品介绍...")
+                                                Text(L("输入作品介绍...", "Enter artwork intro..."))
                                                     .font(.system(size: 14))
                                                     .foregroundColor(Color(red: 0.50, green: 0.45, blue: 0.40).opacity(0.5))
                                                     .padding(.top, 10)
@@ -1616,7 +1616,7 @@ struct PrepareExhibitionView: View {
                         Button(action: {
                             showPopup = true
                         }) {
-                            Text("发布")
+                            Text(L("发布", "Publish"))
                                 .font(.pingFang(size: 18, weight: .semibold))
                                 .foregroundColor(allFieldsFilled ? .white : .white.opacity(0.5))
                                 .frame(maxWidth: .infinity)
@@ -1640,7 +1640,7 @@ struct PrepareExhibitionView: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                        Text("已保存")
+                        Text(L("已保存", "Saved"))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.white)
                     }
@@ -1662,15 +1662,15 @@ struct PrepareExhibitionView: View {
                     .onTapGesture { showPopup = false }
                 
                 VStack(spacing: 16) {
-                    Text("您的展览「\(exhibitionName)」")
+                    Text(L("您的展览「\(exhibitionName)」", "Your exhibition \"\(exhibitionName)\""))
                         .font(.pingFang(size: 18, weight: .bold))
                         .foregroundColor(.white)
-                    
-                    Text("已进入画廊")
+
+                    Text(L("已进入画廊", "has entered the gallery"))
                         .font(.pingFang(size: 20, weight: .semibold))
                         .foregroundColor(Color.galleryMellowGold)
-                    
-                    Text("将从今天起展示一周")
+
+                    Text(L("将从今天起展示一周", "will be displayed for one week starting today"))
                         .font(.system(size: 14))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -1691,7 +1691,7 @@ struct PrepareExhibitionView: View {
                         clearDraft()
                         onConfirm(exhibition, effectivePaintings)
                     }) {
-                        Text("确定")
+                        Text(L("确定", "Confirm"))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
                             .padding(.horizontal, 40)
@@ -1723,20 +1723,20 @@ struct PrepareExhibitionView: View {
                 Button(action: onBack) {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text("返回")
+                        Text(L("返回", "Back"))
                     }
                     .foregroundColor(Color(red: 0.40, green: 0.35, blue: 0.30))
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: saveDraft) {
-                    Text("保存")
+                    Text(L("保存", "Save"))
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Color(red: 0.40, green: 0.35, blue: 0.30))
                 }
             }
         }
-        .onAppear(perform: loadDraft)
+        .onAppear { loadDraft() }
     }
     
     var body: some View {
@@ -1847,7 +1847,7 @@ struct VisitExhibitionView: View {
                     // Local exhibition (my own)
                     if let exhibition = activeExhibition {
                         VStack(spacing: 4) {
-                            Text("我的展览")
+                            Text(L("我的展览", "My Exhibitions"))
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white.opacity(0.5))
 
@@ -1863,7 +1863,7 @@ struct VisitExhibitionView: View {
                                 }
                             }
 
-                            Text("展期：\(exhibition.startDate) - \(exhibition.endDate)")
+                            Text(L("展期：\(exhibition.startDate) - \(exhibition.endDate)", "Duration: \(exhibition.startDate) - \(exhibition.endDate)"))
                                 .font(.system(size: 12))
                                 .foregroundColor(.white.opacity(0.5))
                         }
@@ -1873,7 +1873,7 @@ struct VisitExhibitionView: View {
                     // Network exhibitions (from all users)
                     if !networkExhibitions.isEmpty {
                         VStack(spacing: 12) {
-                            Text("社群展览")
+                            Text(L("社群展览", "Community Exhibition"))
                                 .font(.pingFang(size: 18, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.8))
                                 .padding(.top, activeExhibition != nil ? 20 : 40)
@@ -1967,7 +1967,7 @@ struct VisitExhibitionView: View {
 
                     if activeExhibition == nil && networkExhibitions.isEmpty {
                         VStack(spacing: 24) {
-                            Text("当前暂无展览")
+                            Text(L("当前暂无展览", "No Current Exhibitions"))
                                 .font(.pingFang(size: 28, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
 
@@ -1975,7 +1975,7 @@ struct VisitExhibitionView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(.white.opacity(0.3))
 
-                            Text("敬请期待新的艺术展览")
+                            Text(L("敬请期待新的艺术展览", "Stay tuned for new art exhibitions"))
                                 .font(.system(size: 14))
                                 .foregroundColor(.white.opacity(0.5))
                         }
@@ -1998,14 +1998,14 @@ struct VisitExhibitionView: View {
         }
         .networkErrorBanner(show: $exhibitionStore.showNetworkError)
         .networkErrorBanner(show: $exhibitionStore.showModerationAlert, message: exhibitionStore.moderationMessage)
-        .onAppear(perform: loadActiveExhibition)
+        .onAppear { loadActiveExhibition() }
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: onBack) {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text("返回")
+                        Text(L("返回", "Back"))
                     }
                     .foregroundColor(.white)
                 }
@@ -2022,7 +2022,7 @@ struct VisitExhibitionView: View {
                 .onTapGesture { reportingExhibition = nil }
 
             VStack(spacing: 20) {
-                Text("举报展览")
+                Text(L("举报展览", "Report Exhibition"))
                     .font(.pingFang(size: 20, weight: .semibold))
                     .foregroundColor(.pictureTextDark)
 
@@ -2074,7 +2074,7 @@ struct VisitExhibitionView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "hand.raised.fill")
                             .font(.system(size: 14))
-                        Text("举报并拉黑该用户")
+                        Text(L("举报并拉黑该用户", "Report and Block User"))
                             .font(.pingFang(size: 15, weight: .medium))
                     }
                     .foregroundColor(.white)
@@ -2086,7 +2086,7 @@ struct VisitExhibitionView: View {
                 .disabled(isSubmittingReport)
 
                 Button(action: { reportingExhibition = nil }) {
-                    Text("取消")
+                    Text(L("取消", "Cancel"))
                         .font(.pingFang(size: 16))
                         .foregroundColor(.gray)
                 }
@@ -2192,7 +2192,7 @@ struct ExhibitionDetailView: View {
                 
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("展览介绍")
+                        Text(L("展览介绍", "Exhibition Intro"))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.white.opacity(0.7))
                         
@@ -2240,7 +2240,7 @@ struct ExhibitionDetailView: View {
                 Button(action: onBack) {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text("返回")
+                        Text(L("返回", "Back"))
                     }
                     .foregroundColor(.white)
                 }
@@ -2273,7 +2273,7 @@ struct ExhibitionPictureView: View {
             if showEnding {
                 VStack {
                     Spacer()
-                    Text("展览结束，感谢您的参观")
+                    Text(L("展览结束，感谢您的参观", "Exhibition ended, thank you for visiting"))
                         .font(.pingFang(size: 22, weight: .semibold))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
@@ -2425,7 +2425,7 @@ struct ExhibitionPictureView: View {
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text("返回")
+                        Text(L("返回", "Back"))
                     }
                     .foregroundColor(.white)
                 }
@@ -2892,7 +2892,7 @@ struct GalleryView: View {
                             stripeWidth: stripeWidth
                         ) {
                             // 文本保持盒子居中
-                            titledLabel(title: "上传作品", accent: burgundy)
+                            titledLabel(title: L("上传作品", "Upload"), accent: burgundy)
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -2910,7 +2910,7 @@ struct GalleryView: View {
                             stripeWidth: stripeWidth
                         ) {
                             // 文本与其它两个盒子一样在盒子内部居中
-                            titledLabel(title: "计划策展", accent: antiqueRose)
+                            titledLabel(title: L("计划策展", "Curate"), accent: antiqueRose)
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -2927,7 +2927,7 @@ struct GalleryView: View {
                             strokeWidth: strokeWidth,
                             stripeWidth: stripeWidth
                         ) {
-                            titledLabel(title: "当前展览", accent: midnightBlue)
+                            titledLabel(title: L("当前展览", "Gallery"), accent: midnightBlue)
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -2985,7 +2985,7 @@ struct GalleryView: View {
         .frame(width: width, height: height)
     }
 
-    // MARK: - White text on very transparent colored rectangle (pill shape)
+    // MARK: - Liquid glass pill button with colored tint
     private func titledLabel(title: String, accent: Color) -> some View {
         Text(title)
             .font(.pingFang(size: 20, weight: .medium))
@@ -2993,8 +2993,44 @@ struct GalleryView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(accent.opacity(0.30))
+                ZStack {
+                    // 1. 磨砂玻璃基底（ultraThinMaterial 透过底层彩色背景）
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                    // 2. 彩色叠加（保留原 accent 色调，略加深让文字可读）
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(accent.opacity(0.40))
+                    // 3. 顶部高光：模拟玻璃上缘反光
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.50),
+                                    Color.white.opacity(0.10),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: UnitPoint(x: 0.5, y: 0.55)
+                            )
+                        )
+                }
             )
+            .overlay(
+                // 4. 细白色渐变描边：玻璃边缘
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.55),
+                                Color.white.opacity(0.12)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.8
+                    )
+            )
+            // 5. 柔和投影：浮于背景之上
+            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
     }
 }
