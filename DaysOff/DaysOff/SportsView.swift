@@ -107,28 +107,36 @@ private struct SportBeamShape: Shape {
 // MARK: - SportsView (入口页面)
 struct SportsView: View {
     let userId: String
+    let existingEntries: [EventsMatchEntry]
     let onEventSaved: (EventsMatchEntry) -> Void
     let onSaveAndJumpToMyPage: ((EventsMatchEntry) -> Void)?
     var onCreateMilestone: ((MilestoneRecord) -> Void)? = nil
+    var onRemoveEventByMatchName: ((String) -> Void)? = nil
 
     init(
         userId: String = "",
+        existingEntries: [EventsMatchEntry] = [],
         onEventSaved: @escaping (EventsMatchEntry) -> Void,
         onSaveAndJumpToMyPage: ((EventsMatchEntry) -> Void)? = nil,
-        onCreateMilestone: ((MilestoneRecord) -> Void)? = nil
+        onCreateMilestone: ((MilestoneRecord) -> Void)? = nil,
+        onRemoveEventByMatchName: ((String) -> Void)? = nil
     ) {
         self.userId = userId
+        self.existingEntries = existingEntries
         self.onEventSaved = onEventSaved
         self.onSaveAndJumpToMyPage = onSaveAndJumpToMyPage
         self.onCreateMilestone = onCreateMilestone
+        self.onRemoveEventByMatchName = onRemoveEventByMatchName
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 NavigationLink(destination: EventsView(
+                    existingEntries: existingEntries,
                     onEventSaved: onEventSaved,
-                    onSaveAndJumpToMyPage: onSaveAndJumpToMyPage
+                    onSaveAndJumpToMyPage: onSaveAndJumpToMyPage,
+                    onRemoveEventByMatchName: onRemoveEventByMatchName
                 )) {
                     ZStack {
                         LinearGradient(
@@ -201,8 +209,10 @@ struct EventsMatchEntry: Identifiable, Codable {
 
 // MARK: - EventsView (赛事关注)
 struct EventsView: View {
+    let existingEntries: [EventsMatchEntry]
     let onEventSaved: (EventsMatchEntry) -> Void
     let onSaveAndJumpToMyPage: ((EventsMatchEntry) -> Void)?
+    var onRemoveEventByMatchName: ((String) -> Void)? = nil
 
     @State private var selectedSport: String? = nil
     @State private var sportInput: String = ""
@@ -219,6 +229,8 @@ struct EventsView: View {
     @State private var savedEntries: [EventsMatchEntry] = []
     @State private var savedToMyPageIds: Set<UUID> = []
     @State private var isHeartClicked: Bool = false   // 右上角心形点击后的红色状态
+    @State private var showDuplicateAlert: Bool = false
+    @State private var pendingEntry: EventsMatchEntry?
 
     private let scoreMatchSports: Set<String> = [
         // 中文
@@ -311,6 +323,21 @@ struct EventsView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .alert(L("已存在该赛事卡片", "This match card already exists"),
+               isPresented: $showDuplicateAlert) {
+            Button(role: .destructive) {
+                confirmReplaceDuplicate()
+            } label: {
+                Text(L("是", "Yes"))
+            }
+            Button(role: .cancel) {
+                declineDuplicateAndAppendSuffix()
+            } label: {
+                Text(L("否", "No"))
+            }
+        } message: {
+            Text(L("是否替换成新卡片？", "Replace with the new card?"))
+        }
     }
 
     private var eventsInputCard: some View {
@@ -450,7 +477,7 @@ struct EventsView: View {
 
                         ZStack(alignment: .topLeading) {
                             if freeText.isEmpty {
-                                Text(L("想记录的内容...", "Notes to record..."))
+                                Text(L("想记录的内容...", "Add a note..."))
                                     .font(.system(size: 14))
                                     .foregroundColor(.gray.opacity(0.6))
                                     .padding(.top, 10)
@@ -499,6 +526,17 @@ struct EventsView: View {
             heartOnTeam: isScoreMatch ? 1 : heartOnTeam,
             isScoreMatch: isScoreMatch
         )
+
+        // 检查重名：合并本次会话与父 view 已保存的卡片
+        let allEntries = savedEntries + existingEntries
+        if allEntries.contains(where: { $0.matchName == matchName }) {
+            pendingEntry = entry
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                showDuplicateAlert = true
+            }
+            return
+        }
+
         savedEntries.append(entry)
         savedToMyPageIds.insert(entry.id)
 
@@ -506,6 +544,44 @@ struct EventsView: View {
         // 延迟 0.4s 让心形变红可见
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             onSaveAndJumpToMyPage?(entry)
+        }
+    }
+
+    /// 用户选择"是"：用新卡片替换同名原卡片
+    private func confirmReplaceDuplicate() {
+        guard let entry = pendingEntry else { return }
+        // 从本地 savedEntries 移除同名卡片
+        savedEntries.removeAll { $0.matchName == entry.matchName }
+        // 通知父 view 移除同名旧卡片
+        onRemoveEventByMatchName?(entry.matchName)
+        savedEntries.append(entry)
+        savedToMyPageIds.insert(entry.id)
+        let entryToSave = entry
+        pendingEntry = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            onSaveAndJumpToMyPage?(entryToSave)
+        }
+    }
+
+    /// 用户选择"否"：保留原卡片，新卡片名称后追加 "2"
+    private func declineDuplicateAndAppendSuffix() {
+        guard let entry = pendingEntry else { return }
+        let appendedEntry = EventsMatchEntry(
+            sport: entry.sport,
+            matchName: entry.matchName + "2",
+            matchTime: entry.matchTime,
+            team1: entry.team1,
+            team2: entry.team2,
+            freeText: entry.freeText,
+            heartOnTeam: entry.heartOnTeam,
+            isScoreMatch: entry.isScoreMatch
+        )
+        savedEntries.append(appendedEntry)
+        savedToMyPageIds.insert(appendedEntry.id)
+        let entryToSave = appendedEntry
+        pendingEntry = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            onSaveAndJumpToMyPage?(entryToSave)
         }
     }
 
@@ -542,11 +618,16 @@ struct EventsView: View {
         }
     }
 
+    private var canApplyHeart: Bool {
+        !team1.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !team2.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     private var eventsHeartStickerArea: some View {
         VStack(spacing: 8) {
             HStack {
                 Button(action: {
-                    heartOnTeam = 1
+                    if canApplyHeart { heartOnTeam = 1 }
                 }) {
                     HStack(spacing: 4) {
                         EventsSketchHeart()
@@ -562,6 +643,7 @@ struct EventsView: View {
                             .fill(heartOnTeam == 1 ? Color.eventsSketchRed.opacity(0.15) : Color.gray.opacity(0.08))
                     )
                 }
+                .disabled(!canApplyHeart)
 
                 Spacer()
 
@@ -569,6 +651,7 @@ struct EventsView: View {
                     .frame(width: 36, height: 36)
                     .shadow(color: .black.opacity(0.2), radius: 4, x: 2, y: 2)
                     .onTapGesture {
+                        guard canApplyHeart else { return }
                         if heartOnTeam == nil {
                             heartOnTeam = 1
                         } else if heartOnTeam == 1 {
@@ -581,7 +664,7 @@ struct EventsView: View {
                 Spacer()
 
                 Button(action: {
-                    heartOnTeam = 2
+                    if canApplyHeart { heartOnTeam = 2 }
                 }) {
                     HStack(spacing: 4) {
                         EventsSketchHeart()
@@ -597,9 +680,12 @@ struct EventsView: View {
                             .fill(heartOnTeam == 2 ? Color.eventsSketchRed.opacity(0.15) : Color.gray.opacity(0.08))
                     )
                 }
+                .disabled(!canApplyHeart)
             }
 
-            Text(heartOnTeam.map { "爱心已贴在队伍\($0)，点击爱心可切换" } ?? L("给你喜欢的队伍贴上爱心", "Put a heart sticker on the team you support"))
+            Text(heartOnTeam.map { "爱心已贴在队伍\($0)，点击爱心可切换" }
+                 ?? L(canApplyHeart ? "给你喜欢的队伍贴上爱心" : "请先填完队伍1和队伍2",
+                      canApplyHeart ? "Put a heart sticker on the team you support" : "Please fill in both Team 1 and Team 2 first"))
                 .font(.system(size: 12))
                 .foregroundColor(.gray)
         }

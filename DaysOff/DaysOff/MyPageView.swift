@@ -25,6 +25,15 @@ private func wrapEvery6(_ str: String) -> Text {
     return Text(result)
 }
 
+/// 智能换行：含空格（英文）按空格分割换行，无空格（中文）按每 6 字符换行
+private func wrapSmart(_ str: String) -> Text {
+    if str.contains(" ") {
+        let words = str.split(separator: " ")
+        return Text(words.joined(separator: "\n"))
+    }
+    return wrapEvery6(str)
+}
+
 /// 将字符串按每 5 个字符强制换行（用于旅行卡片标题每行最多 5 字，最多 2 行）
 private func wrapEvery5(_ str: String) -> String {
     var result = ""
@@ -744,7 +753,7 @@ struct MyPageView: View {
                 .foregroundColor(Color(red: 102/255, green: 103/255, blue: 171/255))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
-            wrapEvery6(event.matchName)
+            wrapSmart(event.matchName)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(Color(red: 102/255, green: 103/255, blue: 171/255))
                 .multilineTextAlignment(.center)
@@ -803,15 +812,39 @@ struct MyPageView: View {
                         .font(.system(size: 12))
                         .foregroundColor(.gray)
                     HStack(spacing: 8) {
-                        Text(event.team1.isEmpty ? "—" : event.team1)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.primary)
+                        // 左半：[爱心? 队伍1] 整体右对齐，爱心紧贴队伍1左侧
+                        HStack(spacing: 2) {
+                            if event.heartOnTeam == 1 {
+                                Image(systemName: "heart")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(Color(red: 196/255, green: 178/255, blue: 232/255))
+                            }
+                            Text(event.team1.isEmpty ? "—" : event.team1)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.primary)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+
+                        // VS 严格居中卡片中线
                         Text("VS")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color(red: 0.95, green: 0.45, blue: 0.25))
-                        Text(event.team2.isEmpty ? "—" : event.team2)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.primary)
+                            .fixedSize(horizontal: true, vertical: false)
+
+                        // 右半：[队伍2 爱心?] 整体左对齐，爱心紧贴队伍2右侧
+                        HStack(spacing: 2) {
+                            Text(event.team2.isEmpty ? "—" : event.team2)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.primary)
+                                .fixedSize(horizontal: true, vertical: false)
+                            if event.heartOnTeam == 2 {
+                                Image(systemName: "heart")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(Color(red: 196/255, green: 178/255, blue: 232/255))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             }
@@ -824,7 +857,6 @@ struct MyPageView: View {
                     Text(event.freeText)
                         .font(.system(size: 16))
                         .foregroundColor(.primary)
-                        .multilineTextAlignment(.center)
                 }
             }
         }
@@ -1557,7 +1589,7 @@ struct MyPageView: View {
                             VStack(spacing: 0) {
                                 aboutRow(label: L("本应用名称", "Name of the App"), value: "Days OFF")
                                 Divider().padding(.leading, 20)
-                                aboutRow(label: L("版本号", "Version"), value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.8")
+                                aboutRow(label: L("版本号", "Version"), value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.9")
                                 Divider().padding(.leading, 20)
                                 aboutRow(label: L("发布时间", "Release Date"), value: "2026.9.17")
                             }

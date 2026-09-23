@@ -317,6 +317,7 @@ struct ContentView: View {
         case .sports:
             SportsView(
                 userId: userId,
+                existingEntries: savedEvents,
                 onEventSaved: { entry in
                     savedEvents.append(entry)
                 },
@@ -330,6 +331,9 @@ struct ContentView: View {
                 },
                 onCreateMilestone: { milestone in
                     savedMilestones.append(milestone)
+                },
+                onRemoveEventByMatchName: { matchName in
+                    savedEvents.removeAll { $0.matchName == matchName }
                 }
             )
             .trackScreen("sports")
