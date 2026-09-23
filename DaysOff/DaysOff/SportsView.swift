@@ -230,7 +230,9 @@ struct EventsView: View {
     @State private var savedToMyPageIds: Set<UUID> = []
     @State private var isHeartClicked: Bool = false   // 右上角心形点击后的红色状态
     @State private var showDuplicateAlert: Bool = false
+    @State private var showMultiReplaceAlert: Bool = false
     @State private var pendingEntry: EventsMatchEntry?
+    @State private var pendingMatchNames: [String] = []
 
     private let scoreMatchSports: Set<String> = [
         // 中文
@@ -337,6 +339,25 @@ struct EventsView: View {
             }
         } message: {
             Text(L("是否替换成新卡片？", "Replace with the new card?"))
+        }
+        .confirmationDialog(L("选择要替换的卡片", "Choose a card to replace"),
+                            isPresented: $showMultiReplaceAlert,
+                            titleVisibility: .visible) {
+            ForEach(pendingMatchNames, id: \.self) { name in
+                Button(L("替换「\(name)」", "Replace \"\(name)\"")) {
+                    replaceSpecific(matchName: name)
+                }
+            }
+            Button(L("全部替换", "Replace All")) {
+                replaceAllDuplicates()
+            }
+            Button(role: .cancel) {
+                // 不替换，回到主弹窗
+            } label: {
+                Text(L("取消", "Cancel"))
+            }
+        } message: {
+            Text(L("已存在多张同名卡片，请选择替换方式", "Multiple cards with the same name exist. Choose how to replace."))
         }
     }
 
@@ -527,10 +548,12 @@ struct EventsView: View {
             isScoreMatch: isScoreMatch
         )
 
-        // 检查重名：合并本次会话与父 view 已保存的卡片
+        // 检查重名：合并本次会话与父 view 已保存的卡片，找出所有基础名匹配的卡片
         let allEntries = savedEntries + existingEntries
-        if allEntries.contains(where: { $0.matchName == matchName }) {
+        let matchNames = findDuplicateMatchNames(in: allEntries, for: matchName)
+        if !matchNames.isEmpty {
             pendingEntry = entry
+            pendingMatchNames = matchNames
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 showDuplicateAlert = true
             }
@@ -547,28 +570,77 @@ struct EventsView: View {
         }
     }
 
-    /// 用户选择"是"：用新卡片替换同名原卡片
+    /// 用户选择"是"：单张直接替换，多张弹二级选择
     private func confirmReplaceDuplicate() {
         guard let entry = pendingEntry else { return }
-        // 从本地 savedEntries 移除同名卡片
-        savedEntries.removeAll { $0.matchName == entry.matchName }
-        // 通知父 view 移除同名旧卡片
-        onRemoveEventByMatchName?(entry.matchName)
-        savedEntries.append(entry)
-        savedToMyPageIds.insert(entry.id)
-        let entryToSave = entry
+        if pendingMatchNames.count <= 1 {
+            // 单张重名：直接替换
+            let targetName = pendingMatchNames.first ?? entry.matchName
+            savedEntries.removeAll { $0.matchName == targetName }
+            onRemoveEventByMatchName?(targetName)
+            savedEntries.append(entry)
+            savedToMyPageIds.insert(entry.id)
+            let entryToSave = entry
+            pendingEntry = nil
+            pendingMatchNames = []
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                onSaveAndJumpToMyPage?(entryToSave)
+            }
+        } else {
+            // 多张重名：弹二级选择
+            showMultiReplaceAlert = true
+        }
+    }
+
+    /// 替换指定名称的卡片，新卡片继承被替换卡片的名称
+    private func replaceSpecific(matchName targetName: String) {
+        guard let entry = pendingEntry else { return }
+        savedEntries.removeAll { $0.matchName == targetName }
+        onRemoveEventByMatchName?(targetName)
+        let newEntry = EventsMatchEntry(
+            sport: entry.sport,
+            matchName: targetName,
+            matchTime: entry.matchTime,
+            team1: entry.team1,
+            team2: entry.team2,
+            freeText: entry.freeText,
+            heartOnTeam: entry.heartOnTeam,
+            isScoreMatch: entry.isScoreMatch
+        )
+        savedEntries.append(newEntry)
+        savedToMyPageIds.insert(newEntry.id)
+        let entryToSave = newEntry
         pendingEntry = nil
+        pendingMatchNames = []
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             onSaveAndJumpToMyPage?(entryToSave)
         }
     }
 
-    /// 用户选择"否"：保留原卡片，新卡片名称后追加 "2"
+    /// 替换所有同名卡片，新卡片用基础名
+    private func replaceAllDuplicates() {
+        guard let entry = pendingEntry else { return }
+        for name in pendingMatchNames {
+            savedEntries.removeAll { $0.matchName == name }
+            onRemoveEventByMatchName?(name)
+        }
+        savedEntries.append(entry)
+        savedToMyPageIds.insert(entry.id)
+        let entryToSave = entry
+        pendingEntry = nil
+        pendingMatchNames = []
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            onSaveAndJumpToMyPage?(entryToSave)
+        }
+    }
+
+    /// 用户选择"否"：保留原卡片，新卡片名称后追加下一个数字
     private func declineDuplicateAndAppendSuffix() {
         guard let entry = pendingEntry else { return }
+        let nextNum = nextSuffix(in: pendingMatchNames, baseName: entry.matchName)
         let appendedEntry = EventsMatchEntry(
             sport: entry.sport,
-            matchName: entry.matchName + "2",
+            matchName: entry.matchName + "\(nextNum)",
             matchTime: entry.matchTime,
             team1: entry.team1,
             team2: entry.team2,
@@ -580,6 +652,7 @@ struct EventsView: View {
         savedToMyPageIds.insert(appendedEntry.id)
         let entryToSave = appendedEntry
         pendingEntry = nil
+        pendingMatchNames = []
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             onSaveAndJumpToMyPage?(entryToSave)
         }
@@ -592,6 +665,43 @@ struct EventsView: View {
          ? !supportedPlayer.trimmingCharacters(in: .whitespaces).isEmpty
          : (!team1.trimmingCharacters(in: .whitespaces).isEmpty &&
             !team2.trimmingCharacters(in: .whitespaces).isEmpty))
+    }
+
+    /// 找出所有基础名匹配的卡片名称（matchName 本身 + matchName + 纯数字后缀）
+    private func findDuplicateMatchNames(in entries: [EventsMatchEntry], for baseName: String) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for entry in entries {
+            let name = entry.matchName
+            guard name == baseName || (name.hasPrefix(baseName) && !name.dropFirst(baseName.count).isEmpty && name.dropFirst(baseName.count).allSatisfy({ $0.isNumber })) else { continue }
+            if !seen.contains(name) {
+                seen.insert(name)
+                result.append(name)
+            }
+        }
+        return result.sorted { a, b in
+            if a == baseName { return true }
+            if b == baseName { return false }
+            let aNum = Int(a.dropFirst(baseName.count)) ?? 0
+            let bNum = Int(b.dropFirst(baseName.count)) ?? 0
+            return aNum < bNum
+        }
+    }
+
+    /// 计算下一个可用的数字后缀（已有最大数字 + 1）
+    private func nextSuffix(in matchNames: [String], baseName: String) -> Int {
+        var maxNum = 1
+        for name in matchNames {
+            if name == baseName {
+                continue
+            } else if name.hasPrefix(baseName) {
+                let suffix = name.dropFirst(baseName.count)
+                if let num = Int(suffix) {
+                    maxNum = max(maxNum, num)
+                }
+            }
+        }
+        return maxNum + 1
     }
 
     private func eventsTeamField(text: Binding<String>, placeholder: String, hasHeart: Bool) -> some View {

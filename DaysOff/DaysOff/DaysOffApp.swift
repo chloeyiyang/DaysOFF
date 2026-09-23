@@ -658,9 +658,8 @@ struct UnderlinedField: View {
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
                     .keyboardType(.default)
-                    // 密码字段：标记为新密码字段，利于 iCloud Keychain 填充；
-                    // 但保持键盘为 default 而不是 asciiCapable，避免锁死英文键盘。
-                    .textContentType(label == "确认密码" ? .newPassword : .password)
+                    // 密码字段：不标识为密码类型，阻止 iOS 弹出密码自动填充弹窗
+                    .textContentType(.none)
             } else {
                 TextField("", text: $text)
                     .font(.pingFang(size: 16))
@@ -669,10 +668,8 @@ struct UnderlinedField: View {
                     // （autocorrection 必须 true 级别的 disable，否则 iOS 会把中文拼音组合串当成英文乱词干扰输入）
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
-                    // **关键**：对用户名字段显式清空 textContentType（用 .none，而不是传 nil）。
-                    // 默认情况下某些 iOS 版本仍可能把它识别为用户名建议并强制英文键盘；
-                    // 这里显式设为 .none = 不提供语义 = 让中文输入法正常工作。
-                    .textContentType(label == "用户名" ? .none : .none)
+                    // 用户名字段：明确标识为 .username，防止 iOS 把手机号推送为建议
+                    .textContentType(.username)
             }
             Rectangle()
                 .fill(brownText.opacity(0.4))
