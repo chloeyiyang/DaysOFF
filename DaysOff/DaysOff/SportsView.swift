@@ -1976,7 +1976,10 @@ struct PlanDiaryPage: View {
             .padding(.vertical, 12)
         }
         // 键盘显示时移除安全区 padding，让输入框紧贴键盘顶部；隐藏时保留 padding 让内容避开 home indicator
-        .padding(.bottom, keyboard.height > 0 ? 0 : UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0)
+        .padding(.bottom, keyboard.height > 0 ? 0 : UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first?.safeAreaInsets.bottom ?? 0)
         // background 在 padding 之外，覆盖 VStack + padding，奶油色延伸到屏幕底部
         .background(Color(red: 247/255, green: 243/255, blue: 233/255))
     }

@@ -411,36 +411,6 @@ struct FeelingResultView: View {
         }
     }
 
-    private func acrylicParagraph(title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.pingFang(size: 20, weight: .semibold))
-                .foregroundColor(sandBrown)
-
-            Text(body)
-                .font(.pingFang(size: 15))
-                .foregroundColor(sandBrown.opacity(0.9))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .light)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.white.opacity(0.55), lineWidth: 1.2)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.white.opacity(0.25), lineWidth: 3)
-                .padding(2.5)
-        )
-        .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
-    }
-
     var body: some View {
         ZStack {
             auroraBackground

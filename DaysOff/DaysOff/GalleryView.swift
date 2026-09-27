@@ -4,8 +4,6 @@
 //
 
 import SwiftUI
-import PhotosUI
-import CoreImage
 import UIKit
 
 // MARK: - Gallery Module Color Extensions
@@ -2485,12 +2483,7 @@ struct InkSplashShape: Shape {
                 path.move(to: CGPoint(x: x, y: y))
             } else {
                 let prevAngle = Double(i - 1) / Double(points) * 2 * .pi
-                let prevNoise = sin(Double(seed * 7 + (i - 1) * 3)) * 0.3 + sin(Double(seed * 11 + (i - 1) * 5)) * 0.2
-                let prevRX = baseRadiusX * (1.0 + prevNoise * 0.6)
-                let prevRY = baseRadiusY * (1.0 + prevNoise)
-                let prevX = center.x + cos(prevAngle) * prevRX
-                let prevY = center.y + sin(prevAngle) * prevRY
-                
+
                 let cpAngle = (prevAngle + angle) / 2
                 let cpNoise = sin(Double(seed * 13 + i)) * 0.4
                 let cpRX = baseRadiusX * (1.15 + cpNoise * 0.3)

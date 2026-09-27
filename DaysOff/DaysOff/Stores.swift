@@ -391,6 +391,8 @@ final class TravelIdeasStore: ObservableObject {
 
     private var lastPollHadError = false
     private var pollTimer: Timer?
+    /// 本地 ideas 为空时，从后端拉取该用户的灵感回填本地（避免退出登录清空本地后用空数组覆盖后端）
+    var onRestoredMyIdeas: (([TravelIdea]) -> Void)?
 
     // MARK: 轮询（先同步一次本地灵感，再每 15s 拉取他人灵感）
 
@@ -425,6 +427,38 @@ final class TravelIdeasStore: ObservableObject {
     // MARK: 同步我的灵感到服务器
 
     func sync(userId: String, userName: String, ideas: [TravelIdea]) async {
+        // 本地为空时跳过同步，避免覆盖后端（恢复由 restoreIfNeeded 处理）
+        guard !ideas.isEmpty else {
+            // 兜底：尝试从共享表拉取该用户的灵感回填本地
+            do {
+                let allIdeas = try await NetworkService.shared.fetchTravelIdeas()
+                let myBackendIdeas = allIdeas.filter { $0.userId == userId }
+                if !myBackendIdeas.isEmpty {
+                    let restored: [TravelIdea] = myBackendIdeas.map { net in
+                        TravelIdea(
+                            id: net.id,
+                            title: net.title,
+                            content: net.content,
+                            destination: net.destination,
+                            landmark: net.landmark,
+                            date: net.date,
+                            startDate: net.startDate,
+                            endDate: net.endDate
+                        )
+                    }
+                    onRestoredMyIdeas?(restored)
+                    rebuildUsers(from: allIdeas, excluding: userId)
+                }
+            } catch {
+                showNetworkError = true
+            }
+            return
+        }
+
+        // 1. 推送到 user_data 通用块（主存储，E2EE 加密）
+        UserSyncStore.shared.pushTravelIdeas(userId: userId, ideas: ideas)
+
+        // 2. 同步到 travel_ideas 共享表（让其他用户看到我的灵感）
         do {
             let allIdeas = try await NetworkService.shared.syncTravelIdeas(
                 userId: userId, userName: userName, ideas: ideas
@@ -574,6 +608,13 @@ final class UserSyncStore: ObservableObject {
         Task { try? await push(trips, userId: userId, key: "packed_trips") }
     }
 
+    /// 旅行灵感主存储推送（user_data 通用块，E2EE 加密）
+    /// 本地为空时跳过推送，避免覆盖后端（恢复由 restoreIfNeeded 处理）
+    func pushTravelIdeas(userId: String, ideas: [TravelIdea]) {
+        guard !ideas.isEmpty else { return }
+        Task { try? await push(ideas, userId: userId, key: "travel_ideas") }
+    }
+
     func pushEvents(userId: String, events: [EventsMatchEntry]) {
         Task { try? await push(events, userId: userId, key: "events_matches") }
     }
@@ -633,6 +674,8 @@ final class UserSyncStore: ObservableObject {
         restoreCodable(CryptoBox.unwrap(blobs["milestones"]), as: [MilestoneRecord].self, key: milestonesKey(userId))
         restoreCardPositions(CryptoBox.unwrap(blobs["card_positions"]), userId: userId)
         await restoreExhibitionHistory(userId: userId)
+        // 旅行灵感主存储走 user_data 通用块（与图片/运动笔记同机制）
+        restoreCodable(CryptoBox.unwrap(blobs["travel_ideas"]), as: [TravelIdea].self, key: "travel_saved_ideas_\(userId)")
     }
 
     // MARK: - 私有：恢复各项

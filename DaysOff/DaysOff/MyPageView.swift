@@ -1589,9 +1589,9 @@ struct MyPageView: View {
                             VStack(spacing: 0) {
                                 aboutRow(label: L("本应用名称", "Name of the App"), value: "Days OFF")
                                 Divider().padding(.leading, 20)
-                                aboutRow(label: L("版本号", "Version"), value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1")
+                                aboutRow(label: L("版本号", "Version"), value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.1")
                                 Divider().padding(.leading, 20)
-                                aboutRow(label: L("发布时间", "Release Date"), value: "2026.9.23")
+                                aboutRow(label: L("发布时间", "Release Date"), value: "2026.9.27")
                             }
                             .background(
                                 RoundedRectangle(cornerRadius: 12)

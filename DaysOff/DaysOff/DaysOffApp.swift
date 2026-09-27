@@ -939,25 +939,6 @@ struct TermsAgreementView: View {
         }
     }
 
-    private func fullTextSheet(title: String, text: String, onClose: @escaping () -> Void) -> some View {
-        NavigationStack {
-            ScrollView {
-                Text(text)
-                    .font(.system(size: 14))
-                    .foregroundColor(.black.opacity(0.75))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(L("关闭", "Close")) { onClose() }
-                }
-            }
-        }
-    }
-
     private let fullTermsText = """
     生效日期：2026年8月25日
 

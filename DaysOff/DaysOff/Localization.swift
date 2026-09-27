@@ -48,6 +48,7 @@ private let artworkTypeTranslations: [String: String] = [
     "手工": "Handicraft",
     "陶艺": "Pottery",
     "厨艺": "Culinary",
+    "园艺": "Gardening",
     "其他": "Others"
 ]
 

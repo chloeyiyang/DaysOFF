@@ -1025,10 +1025,16 @@ app.get('/travel-ideas', (req, res) => {
 });
 
 // POST /travel-ideas — 同步旅行灵感（全量替换该用户的灵感）
+// 防护：ideas 为空数组时拒绝删除，避免本地空覆盖后端（退出登录清空本地后误同步）
 app.post('/travel-ideas', requireAuth, (req, res) => {
   try {
     const { userId, userName, ideas } = req.body;
     if (!assertSelf(req, res, userId)) return;
+    // 防护：空数组不覆盖后端共享表（主存储走 user_data 通用块，有独立防护）
+    if (!Array.isArray(ideas) || ideas.length === 0) {
+      const rows = db.prepare('SELECT * FROM travel_ideas ORDER BY timestamp DESC').all();
+      return res.json(rows.map(rowToTravelIdea));
+    }
     const now = nowISO();
 
     // 删除该用户旧数据
@@ -1070,6 +1076,7 @@ const USER_DATA_KEYS = new Set([
   'events_matches',   // 赛事卡片
   'milestones',       // 运动里程碑（含日期/描述）
   'card_positions',   // 我的页面所有卡片的位置/旋转
+  'travel_ideas',     // 旅行灵感（主存储，E2EE 加密；共享展示走 travel_ideas 表）
 ]);
 
 // GET /user-data/:userId — 拉取该用户全部数据块 { key: value, ... }

@@ -17,7 +17,6 @@ private struct WhippedCreamMintBackground: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
-            let h = geo.size.height
             let phase = sparklePhase
 
             ZStack {
@@ -500,6 +499,16 @@ struct MatchView: View {
             templateCity = draftTemplateCity
             templateAction = draftTemplateAction
             showTemplate = draftShowTemplate
+            // 设置后端灵感恢复回调：本地为空且后端有数据时，回填本地并保存
+            ideasStore.onRestoredMyIdeas = { restored in
+                guard !restored.isEmpty else { return }
+                // 防止重复填充（本地已有则跳过）
+                guard self.users[self.currentUserIndex].ideas.isEmpty else { return }
+                self.users[self.currentUserIndex].ideas = restored
+                if let data = try? JSONEncoder().encode(restored) {
+                    UserDefaults.standard.set(data, forKey: Self.ideasKey(userId: self.userId))
+                }
+            }
             // 启动网络轮询，拉取其他用户的旅行灵感
             startIdeaPolling()
         }
@@ -597,6 +606,15 @@ struct MatchView: View {
             // 固定区域：按钮始终可见
             VStack(spacing: 12) {
                 Button(action: {
+                    // 清空所有输入状态和草稿，确保每次点击都显示空白自由输入框
+                    userInput = ""
+                    draftUserInput = ""
+                    templateCity = ""
+                    templateAction = ""
+                    draftTemplateCity = ""
+                    draftTemplateAction = ""
+                    draftShowTemplate = false
+                    showTemplate = false
                     showInput.toggle()
                 }) {
                     Text(L("新的旅行灵感", "New Travel Inspiration"))
@@ -904,23 +922,53 @@ struct MatchView: View {
         VStack(spacing: 16) {
             Group {
                 if showTemplate {
-                    HStack(spacing: 4) {
-                        Text(L("我想去", "I want to go to"))
-                            .font(.system(size: 18))
-                            .foregroundColor(.tripTextBrown)
-
-                        TextField(L("城市名", "City"), text: $templateCity)
-                            .font(.system(size: 18))
-                            .foregroundColor(.tripTextBrown)
-                            .frame(width: 70)
-
-                        TextField(L("干什么", "Do what"), text: $templateAction)
-                            .font(.system(size: 18))
-                            .foregroundColor(.tripTextBrown)
-                            .frame(maxWidth: .infinity)
+                    let lang = UserDefaults.standard.string(forKey: "app_language") ?? "zh"
+                    if lang == "en" {
+                        // 英文：两行布局
+                        // 第一行：I want to go to + Places
+                        // 第二行：in + City（City 成为旅行卡片标题）
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 4) {
+                                Text("I want to go to ")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.tripTextBrown)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                TextField("Places", text: $templateAction)
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.tripTextBrown)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            HStack(spacing: 4) {
+                                Text("in ")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.tripTextBrown)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                TextField("City", text: $templateCity)
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.tripTextBrown)
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .padding(16)
+                        .frame(height: 200, alignment: .top)
+                    } else {
+                        // 中文：单行布局 我想去 + 城市名 + 干什么
+                        HStack(spacing: 4) {
+                            Text("我想去")
+                                .font(.system(size: 18))
+                                .foregroundColor(.tripTextBrown)
+                            TextField("城市名", text: $templateCity)
+                                .font(.system(size: 18))
+                                .foregroundColor(.tripTextBrown)
+                                .frame(width: 70)
+                            TextField("干什么", text: $templateAction)
+                                .font(.system(size: 18))
+                                .foregroundColor(.tripTextBrown)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .padding(16)
+                        .frame(height: 200, alignment: .top)
                     }
-                    .padding(16)
-                    .frame(height: 200, alignment: .top)
                 } else {
                     TextEditor(text: $userInput)
                         .scrollContentBackground(.hidden)
@@ -1000,7 +1048,16 @@ struct MatchView: View {
 
         guard !city.isEmpty else { return }
 
-        let content = "我想去\(city)\(action)"
+        let lang = UserDefaults.standard.string(forKey: "app_language") ?? "zh"
+        let content: String
+        if lang == "en" {
+            // 英文：templateAction = Places, templateCity = City
+            // content = I want to go to {places} in {city}
+            content = action.isEmpty ? "I want to go to \(city)" : "I want to go to \(action) in \(city)"
+        } else {
+            // 中文：templateCity = 城市名, templateAction = 干什么
+            content = "我想去\(city)\(action)"
+        }
         let destination = city
         let landmark = city
 
@@ -1019,11 +1076,14 @@ struct MatchView: View {
         expandedDestinations.remove(destination)
         persistIdeas()
 
+        // 清空所有输入草稿，确保下次点击"新的旅行灵感"时输入框为空白
         templateCity = ""
         templateAction = ""
         draftTemplateCity = ""
         draftTemplateAction = ""
         draftShowTemplate = false
+        userInput = ""
+        draftUserInput = ""
     }
     
     private func ideaDetailView(idea: TravelIdea) -> some View {

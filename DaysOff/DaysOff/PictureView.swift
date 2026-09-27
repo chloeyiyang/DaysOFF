@@ -5,7 +5,6 @@
 
 import SwiftUI
 import PhotosUI
-import CoreImage
 import UIKit
 
 // MARK: - Picture Module Color Extensions
@@ -53,7 +52,7 @@ struct TypeSection: Identifiable {
     }
 }
 
-let artworkTypes = ["绘画", "书法", "手工", "陶艺", "厨艺", "其他"]
+let artworkTypes = ["绘画", "书法", "手工", "陶艺", "厨艺", "园艺", "其他"]
 
 // MARK: - Saved picture section persistence (Codable, UserDefaults-backed)
 private let kSavedArtworkSectionsKeyPrefix = "gallery_saved_artwork_sections_"
@@ -186,37 +185,6 @@ struct MuseumWallBackground: View {
             startPoint: .top,
             endPoint: .bottom
         )
-    }
-}
-
-// MARK: - 沙漏形细长三角形（上下两尖端，中间收窄，仅轮廓）
-struct HourglassTriangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        let w = rect.width
-        let h = rect.height
-        let midY = h / 2
-
-        // 真正的沙漏：上宽三角 + 下宽三角，中间收窄成线
-        let topHalfW = w / 2
-        let bottomHalfW = w / 2
-        let neckHalfW: CGFloat = 0.6 // 中间微微收窄，留出一点颈部宽度更美观
-
-        // 上部倒三角（外轮廓）
-        p.move(to: CGPoint(x: w / 2 - topHalfW, y: 0))     // 左上
-        p.addLine(to: CGPoint(x: w / 2 + topHalfW, y: 0))  // 右上
-        p.addLine(to: CGPoint(x: w / 2 + neckHalfW, y: midY)) // 中颈右
-        p.addLine(to: CGPoint(x: w / 2 - neckHalfW, y: midY)) // 中颈左
-        p.closeSubpath()
-
-        // 下部正三角
-        p.move(to: CGPoint(x: w / 2 - neckHalfW, y: midY)) // 中颈左
-        p.addLine(to: CGPoint(x: w / 2 + neckHalfW, y: midY)) // 中颈右
-        p.addLine(to: CGPoint(x: w / 2 + bottomHalfW, y: h))  // 右下
-        p.addLine(to: CGPoint(x: w / 2 - bottomHalfW, y: h))  // 左下
-        p.closeSubpath()
-
-        return p
     }
 }
 
@@ -499,8 +467,10 @@ struct PictureView: View {
                         .position(x: contentGeo.size.width / 2, y: contentGeo.size.height / 2 + 120)
                 }
 
-                // Navigation trigger for gallery after exhibition selection
-                NavigationLink(destination: GalleryContentView(
+            }
+            .coordinateSpace(name: "contentArea")
+            .navigationDestination(isPresented: $navigateToGallery) {
+                GalleryContentView(
                     exhibitionPaintings: selectedExhibitionPaintings,
                     autoShowPrepare: true,
                     userId: userId,
@@ -513,12 +483,8 @@ struct PictureView: View {
                         }
                         onExhibitionConfirmed?(name)
                     }
-                ), isActive: $navigateToGallery) {
-                    EmptyView()
-                }
-                .hidden()
+                )
             }
-            .coordinateSpace(name: "contentArea")
             .animation(.easeInOut(duration: 0.3), value: showUploadConfirm)
             .animation(.easeInOut(duration: 0.3), value: errorMessage.isEmpty)
             .animation(.easeInOut(duration: 0.3), value: selectedPainting != nil)
@@ -662,33 +628,29 @@ struct PictureView: View {
     private func paintingThumbnail(_ painting: PicturePainting) -> some View {
         GeometryReader { geo in
             let side = geo.size.width
-            ZStack {
-                Button(action: { selectedPainting = painting }) {
-                    painting.image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: side, height: side)
-                        .clipped()
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 2, y: 3)
-                }
-                .buttonStyle(PlainButtonStyle())
+            ZStack(alignment: .topTrailing) {
+                // 图片本体：点击放大，用 contentShape 精确限定命中区域
+                painting.image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: side, height: side)
+                    .clipped()
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 2, y: 3)
+                    .contentShape(Rectangle())
+                    .onTapGesture { selectedPainting = painting }
 
                 // Delete X for non-exhibition, non-draft pictures
                 if !exhibitionPaintingIds.contains(painting.id) && !draftPaintingIds.contains(painting.id) {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Button(action: { deleteConfirmPainting = painting }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.white)
-                                    .background(Circle().fill(Color.black.opacity(0.5)))
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .padding(4)
-                        }
-                        Spacer()
+                    Button(action: { deleteConfirmPainting = painting }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .background(Circle().fill(Color.black.opacity(0.5)))
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .frame(width: 30, height: 30)
+                    .contentShape(Rectangle())
+                    .padding(4)
                 }
 
                 // Star(s) for exhibited count — bottom right
@@ -991,12 +953,38 @@ struct PictureView: View {
         showUploadConfirm = false
 
         Task {
-            if let data = try? await item.loadTransferable(type: Data.self) {
+            if var data = try? await item.loadTransferable(type: Data.self) {
                 let sizeLimit = 5 * 1024 * 1024
 
+                // 超过5MB时自动压缩画质，直到小于5MB
+                if data.count > sizeLimit {
+                    #if canImport(UIKit)
+                    if let uiImage = UIImage(data: data) {
+                        var quality: CGFloat = 0.9
+                        while quality > 0.1 {
+                            if let compressed = uiImage.jpegData(compressionQuality: quality),
+                               compressed.count < sizeLimit {
+                                data = compressed
+                                break
+                            }
+                            quality -= 0.1
+                        }
+                        // 如果调质量仍压缩不到5MB以下，缩放图片尺寸再压缩
+                        if data.count > sizeLimit {
+                            let scaled = resizeImage(uiImage, maxDimension: 2000)
+                            if let compressed = scaled.jpegData(compressionQuality: 0.7),
+                               compressed.count < sizeLimit {
+                                data = compressed
+                            }
+                        }
+                    }
+                    #endif
+                }
+
+                // 压缩后仍超过5MB才拒绝
                 if data.count > sizeLimit {
                     await MainActor.run {
-                        errorMessage = "图片大小超过5MB限制，请上传更小的图片"
+                        errorMessage = L("您上传的图片过大，请调整后重新上传", "The size of the picture exceeds limit, please adjust and upload again")
                         selectedPhoto = nil
                     }
                     return
@@ -1099,6 +1087,7 @@ struct PictureView: View {
             }
         }
         exhibitionSelectedIds.remove(painting.id)
+        saveSections()   // 删除后立即持久化，防止退出再进入时被删作品复活
     }
 
     // MARK: - Save sections (pictures + type selections) to UserDefaults
@@ -1189,4 +1178,19 @@ private func pictureCreateImage(from data: Data) -> Image? {
     #endif
     return nil
 }
+
+#if canImport(UIKit)
+/// 缩放图片到指定最大边长（保持宽高比）
+private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+    let size = image.size
+    let maxSide = max(size.width, size.height)
+    guard maxSide > maxDimension else { return image }
+    let scale = maxDimension / maxSide
+    let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+    let renderer = UIGraphicsImageRenderer(size: newSize)
+    return renderer.image { _ in
+        image.draw(in: CGRect(origin: .zero, size: newSize))
+    }
+}
+#endif
 
